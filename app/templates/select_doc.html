@@ -1,0 +1,97 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Select a Document to Preview</h1>
+
+<!-- Radio buttons to select document type -->
+<label>
+    <input type="radio" name="docType" value="pdf" onclick="setDocument('pdf')">
+    PDF Document
+</label><br>
+<label>
+    <input type="radio" name="docType" value="json" onclick="setDocument('json')">
+    JSON Document
+</label><br>
+<label>
+    <input type="radio" name="docType" value="xml" onclick="setDocument('xml')">
+    XML Document
+</label><br>
+<label>
+    <input type="radio" name="docType" value="txt" onclick="setDocument('txt')">
+    TXT Document
+</label><br>
+
+<!-- Preview area -->
+<div class="preview" id="previewArea" style="border: 1px solid #ddd; padding: 20px; margin-top: 10px; height: 500px; overflow: auto; background-color: #f9f9f9;">
+    <p>Please select a document type to preview.</p>
+</div>
+
+<!-- Continue button -->
+<button class="btn btn-primary" onclick="continueAction()">Continue</button>
+
+<script>
+    let selectedDocument = '';
+
+    // Function to set the selected document type
+    function setDocument(type) {
+        selectedDocument = type;
+        showPreview(type);
+    }
+
+    // Function to show the document preview based on selection
+    function showPreview(type) {
+        const previewArea = document.getElementById('previewArea');
+        
+        // Clear preview area
+        previewArea.innerHTML = '';
+
+        if (type === 'pdf') {
+            // Show PDF document
+            const pdfEmbed = document.createElement('embed');
+            pdfEmbed.src = '/docs/sample.pdf';  // Path to the PDF
+            pdfEmbed.type = 'application/pdf';
+            pdfEmbed.width = '100%';
+            pdfEmbed.height = '100%';
+            previewArea.appendChild(pdfEmbed);
+        } else if (type === 'json') {
+            // Fetch and display JSON content
+            fetch('/docs/sample.json')  // Path to the JSON
+                .then(response => response.json())
+                .then(data => {
+                    previewArea.textContent = JSON.stringify(data, null, 4);  // Pretty print JSON
+                });
+        } else if (type === 'txt') {
+            // Show plain text file
+            fetch('/docs/sample.txt')  // Path to the TXT
+                .then(response => response.text())
+                .then(data => {
+                    previewArea.textContent = data;
+                });
+        } else if (type === 'xml') {
+            // Fetch and display XML content
+            fetch('/docs/sample.xml')  // Path to the XML
+                .then(response => response.text())
+                .then(data => {
+                    // Optionally, format the XML for better display
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(data, "application/xml");
+                    const xmlString = new XMLSerializer().serializeToString(xmlDoc);
+                    previewArea.textContent = xmlString; // Display XML as text
+                });
+        }
+
+    }
+
+    // Function to handle the "Continue" button
+    function continueAction() {
+        if (selectedDocument === '') {
+            alert('Please select a document before continuing.');
+            return;
+        }
+        // Redirect to a new route with the document type as a query parameter
+        window.location.href = `/tester/check?document=${selectedDocument}`;
+    }
+</script>
+
+{% endblock %}
