@@ -23,19 +23,13 @@ class ConfService:
     secret_key = "secret_key"
 
     service_url = "http://127.0.0.1:5000/tester"
-    AS="https://walletcentric.signer.eudiw.dev"
-    RS="https://walletcentric.signer.eudiw.dev"
-    SCA="https://walletcentric.signer.eudiw.dev"
+    AS="http://localhost:8084"
+    RS="http://localhost:8085"
+    SCA="http://localhost:8086"
     
-    oauth_client_id = "local-client-tester"
-    oauth_client_secret = "somesecret3"
-    oauth_redirect_uri = "http://127.0.0.1:5000/tester/oauth/login/code"
-
-    alg_oid={
-        "SHA256":"1.2.840.113549.1.1.11",
-        "SHA384":"1.2.840.113549.1.1.12",
-        "SHA512":"1.2.840.113549.1.1.13"
-    }
+    oauth_client_id = "rp-client"
+    oauth_client_secret = "relyingpartysecret"
+    oauth_redirect_uri = "http://127.0.0.1:5000/tester/oauth2/callback"
 
     LOAD_FOLDER = 'app/docs' 
 

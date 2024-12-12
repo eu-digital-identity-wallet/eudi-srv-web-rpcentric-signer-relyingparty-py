@@ -1,0 +1,25 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row">
+  <div class="col-lg-12">
+    <div
+      id="content"
+      class="content-wrap1 content-center col-md-11 col-sm-11"
+      style="
+        height: 70%;
+        flex-direction: column;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      "
+    >
+      <h3>EUDI Wallet</h2>
+      <h1>Relying Party Tester</h1>
+      <div class="genericErrors" id="genericErrorsDesc"></div>
+      <form action="{{ redirect_url }}/select_document" method="GET">
+        <button class="btn btn-primary" type="submit">Sign Document</button>
+      </form>
+      <button class="btn btn-primary" type="submit">Consult Logs</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

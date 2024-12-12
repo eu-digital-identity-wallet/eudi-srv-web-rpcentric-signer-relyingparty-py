@@ -72,9 +72,9 @@ def create_app():
     #app.register_error_handler(Exception, handle_exception)
     app.register_error_handler(404, page_not_found)
 
-    from . import (SCA_routes)
+    from . import (routes)
 
-    app.register_blueprint(SCA_routes.sca)
+    app.register_blueprint(routes.sca)
 
     # config session
     app.config["SESSION_FILE_THRESHOLD"] = 50
@@ -84,5 +84,5 @@ def create_app():
     Session(app)
 
     # CORS is a mechanism implemented by browsers to block requests from domains other than the server's one.
-    CORS(app, supports_credentials=True)
+    CORS(app, supports_credentials=True, resources={r"/tester/*": {"origins": "http://localhost:8084"}})
     return app

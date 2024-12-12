@@ -1,0 +1,117 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row" style="height: 100%">
+  <div class="col-lg-12" style="height: 100%">
+    <div
+      id="content"
+      class="content-wrap1 content-center col-md-11 col-sm-11"
+      style="
+        height: 100%;
+        flex-direction: column;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      "
+    >
+      <!-- Error message display -->
+      {% with messages = get_flashed_messages() %} {% if messages %}
+      <ul class="error-message">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %} {% endwith %}
+
+      <div class="login-container">
+        <!-- Login form -->
+        <a class="test-user-link" onclick="openPopup()">Test User</a>
+        <form
+          action="{{ redirect_url }}/login"
+          method="POST"
+          style="margin-top: 20px"
+        >
+          <label for="username">Username:</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            placeholder="Username"
+            required
+          />
+
+          <label for="password">Password:</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Password"
+            required
+          />
+
+          <!-- Submit button -->
+          <button type="submit">Login</button>
+        </form>
+      </div>
+
+      <!-- Pop-up to display test user information -->
+      <div class="overlay" id="overlay"></div>
+      <div class="popup" id="popup">
+        <div class="popup-close">
+          <button onclick="closePopup()">Close</button>
+        </div>
+        <h3>Test User Information</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Password</th>
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody id="user-table-body">
+            <!-- Data will be inserted here via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Pass the users from Flask to JavaScript using JSON
+  const p_users = {{ rp_users | tojson }};
+
+  // Function to open the pop-up and display user data
+  function openPopup() {
+      const popup = document.getElementById('popup');
+      const overlay = document.getElementById('overlay');
+      const tableBody = document.getElementById('user-table-body');
+
+      // Clear existing table content
+      tableBody.innerHTML = '';
+
+      // Insert rows into the table
+      p_users.forEach(user => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+              <td>${user.username}</td>
+              <td>${user.password}</td>
+              <td>${user.data}</td>
+          `;
+          tableBody.appendChild(row);
+      });
+
+      // Show the pop-up and overlay
+      popup.style.display = 'block';
+      overlay.style.display = 'block';
+  }
+
+  // Function to close the pop-up
+  function closePopup() {
+      const popup = document.getElementById('popup');
+      const overlay = document.getElementById('overlay');
+      popup.style.display = 'none';
+      overlay.style.display = 'none';
+  }
+</script>
+
+{% endblock %}

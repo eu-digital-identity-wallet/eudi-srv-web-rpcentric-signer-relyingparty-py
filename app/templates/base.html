@@ -1,54 +1,312 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no" />
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no"
+    />
     <meta name="theme-color" content="#000000" />
     <meta name="Title" content="rQES Wallet-centric" />
+    <meta name="Keywords" content="EUDI Wallet, PID, Enrolment" />
+    <meta name="Description" content="Request PID for EUDI Wallet" />
     <meta name="robots" content="noindex, nofollow" />
-    <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache,no-store,must-revalidate"
+    />
     <meta http-equiv="Pragma" content="no-cache" />
-    <!--<link rel="icon" href="https://walletcentric.signer.eudiw.dev/static/images/favicon.gif" type="image/gif" />
-    <link href="https://walletcentric.signer.eudiw.dev/static/bootstrap-3.4.1-dist/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <link href="https://walletcentric.signer.eudiw.dev/static/css/stylesheets/custom/custom_en_9.7.1.20.1679559965505.css" media="all" rel="stylesheet" type="text/css" />
-    <link href="https://walletcentric.signer.eudiw.dev/static/fontawesome-free-5.15.4-web/css/fontawesome.min.css" rel="stylesheet" type="text/css" />
-    <script type="text/javascript" id="jqueryId" src="https://walletcentric.signer.eudiw.dev/static/scripts/jquery/jquery-3.6.3.min.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="https://walletcentric.signer.eudiw.dev/static/scripts/promiz/promiz-1.0.6.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="https://walletcentric.signer.eudiw.dev/static/bootstrap-3.4.1-dist/js/bootstrap.min.js" charset="UTF-8" defer="true"></script>
-    <script type="text/javascript" src="https://walletcentric.signer.eudiw.dev/static/scripts/html5shiv/html5shiv-3.7.3.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="https://walletcentric.signer.eudiw.dev/static/scripts/respond/respond-1.4.2.js" charset="UTF-8"></script>
-    <meta name="referrer" content="no-referrer">
-    <script type="text/javascript" src="https://walletcentric.signer.eudiw.dev/static/scripts/loc/loc_en_9.7.1.20.1679559965505.js" charset="UTF-8"></script>-->
-    
-    <link rel="icon" href="http://127.0.0.1:5000/static/images/favicon.gif" type="image/gif" />
-    <link rel="stylesheet" href="http://127.0.0.1:5000/static/bootstrap-3.4.1-dist/css/bootstrap.min.css" type="text/css" />
-    <link rel="stylesheet" href="http://127.0.0.1:5000/static/css/stylesheets/custom/custom_en_9.7.1.20.1679559965505.css" media="all" type="text/css" />
-    <link rel="stylesheet" href="http://127.0.0.1:5000/static/fontawesome-free-5.15.4-web/css/fontawesome.min.css" type="text/css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script type="text/javascript" id="jqueryId" src="http://127.0.0.1:5000/static/scripts/jquery/jquery-3.6.3.min.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="http://127.0.0.1:5000/static/scripts/promiz/promiz-1.0.6.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="http://127.0.0.1:5000/static/bootstrap-3.4.1-dist/js/bootstrap.min.js" charset="UTF-8" defer="true"></script>
-    <script type="text/javascript" src="http://127.0.0.1:5000/static/scripts/html5shiv/html5shiv-3.7.3.js" charset="UTF-8"></script>
-    <script type="text/javascript" src="http://127.0.0.1:5000/static/scripts/respond/respond-1.4.2.js" charset="UTF-8"></script>
-    <meta name="referrer" content="no-referrer">
-    <script type="text/javascript" src="http://127.0.0.1:5000/static/scripts/loc/loc_en_9.7.1.20.1679559965505.js" charset="UTF-8"></script>
+
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='images/favicon.gif') }}"
+      type="image/gif"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='bootstrap-3.4.1-dist/css/bootstrap.min.css') }}"
+      type="text/css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/stylesheets/custom/custom_en_9.7.1.20.1679559965505.css') }}"
+      media="all"
+      type="text/css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='fontawesome-free-5.15.4-web/css/fontawesome.min.css') }}"
+      type="text/css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <script
+      type="text/javascript"
+      id="jqueryId"
+      src="{{ url_for('static', filename='scripts/jquery/jquery-3.6.3.min.js') }}"
+      charset="UTF-8"
+    ></script>
+    <script
+      type="text/javascript"
+      src="{{ url_for('static', filename='scripts/promiz/promiz-1.0.6.js') }}"
+      charset="UTF-8"
+    ></script>
+    <script
+      type="text/javascript"
+      src="{{ url_for('static', filename='bootstrap-3.4.1-dist/js/bootstrap.min.js') }}"
+      charset="UTF-8"
+      defer="true"
+    ></script>
+    <script
+      type="text/javascript"
+      src="{{ url_for('static', filename='scripts/html5shiv/html5shiv-3.7.3.js') }}"
+      charset="UTF-8"
+    ></script>
+    <script
+      type="text/javascript"
+      src="{{ url_for('static', filename='scripts/respond/respond-1.4.2.js') }}"
+      charset="UTF-8"
+    ></script>
+    <meta name="referrer" content="no-referrer" />
+    <script
+      type="text/javascript"
+      src="{{ url_for('static', filename='scripts/loc/loc_en_9.7.1.20.1679559965505.js') }}"
+      charset="UTF-8"
+    ></script>
     <title>rQES Wallet-centric</title>
-</head>
+    <style>
+      footer {
+        background-color: rgba(254, 253, 245, 0);
+        color: rgb(78, 81, 105);
+        padding: 20px;
+        margin-top: 2em;
+        border-top: 1px solid #b3b3b3;
+      }
 
+      .footer-column-box {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
 
-<body id="responsive-main-nav1">
-    <div class="main container-fluid">
-        <header role="banner" class="main-header">
-            <div class="container">
-                <div class="row"><img src="http://127.0.0.1:5000/static/ic-logo.svg"></div>
-            </div>
-        </header>
-        <div role="main" class="container">
-            <div class="content">{% block content %} {% endblock %}</div>
+      .footer-column {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .footer-column a {
+        text-decoration: none;
+        color: rgb(78, 81, 105);
+        margin: 5px;
+      }
+
+      .footer-column a:hover {
+        text-decoration: underline;
+        color: rgb(78, 81, 105);
+      }
+
+      .footer-column img {
+        max-width: 100%;
+        height: auto;
+        margin: 5px;
+      }
+
+      .footer-image {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .login-container {
+        background-color: #fff;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        width: 350px;
+      }
+      .login-container h1 {
+        margin-bottom: 20px;
+        font-size: 24px;
+      }
+      .login-container label {
+        display: block;
+        text-align: left;
+        margin-bottom: 5px;
+        font-size: 14px;
+        font-weight: bold;
+      }
+      .login-container input[type="text"],
+      .login-container input[type="password"],
+      .login-container button {
+        width: 100%; /* Garantindo que todos os inputs e o botão tenham 100% da largura */
+        padding: 10px;
+        margin: 10px 0 20px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      .login-container button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      .login-container button:hover {
+        background-color: #0056b3;
+      }
+
+      .error-message {
+        color: red;
+        margin-bottom: 15px;
+      }
+
+      /* Styling for the Test User link */
+      .test-user-link {
+        padding: 10px;
+        background-color: white;
+        border: 2px solid #007bff;
+        border-radius: 5px;
+        color: #007bff;
+        cursor: pointer;
+        text-align: center;
+        font-size: 14px;
+        text-decoration: none;
+        margin-bottom: 20px;
+      }
+
+      .test-user-link:hover {
+        background-color: #007bff;
+        color: white;
+      }
+
+      /* Styling for the pop-up */
+      .popup {
+        display: none;
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 10px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        border-radius: 10px;
+        width: 300px;
+      }
+
+      .popup table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .popup table th,
+      .popup table td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: left;
+      }
+
+      .popup table th {
+        background-color: #f4f4f4;
+      }
+
+      /* Popup close button */
+      .popup-close {
+        text-align: right;
+      }
+
+      .popup-close button {
+        background-color: #ff4444;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .popup-close button:hover {
+        background-color: #ff0000;
+      }
+
+      /* Overlay for the popup */
+      .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+    </style>
+  </head>
+
+  <body id="responsive-main-nav1">
+    <div
+      class="main container-fluid"
+      style="height: 100vh; display: flex; flex-direction: column"
+    >
+      <header role="banner" class="main-header">
+        <div class="container">
+          <div class="row">
+            <img src="{{ url_for('static', filename='ic-logo.svg') }}" />
+          </div>
         </div>
-    </div>
-    <script>
-    </script>
-</body>
+      </header>
 
+      <div role="main" class="container" style="flex: 1">
+        <div class="content" style="height: 100%">
+          {% block content %} {% endblock %}
+        </div>
+      </div>
+
+      <footer id="footer-main">
+        <div
+          class="row"
+          style="border-top-color: rgb(78, 81, 105); box-sizing: border-box"
+        >
+          <div class="col-md-3 footer-image">
+            <div class="footer-column">
+              <a
+                href="https://ec.europa.eu/digital-building-blocks/sites/display/EUDIGITALIDENTITYWALLET/EU+Digital+Identity+Wallet+Home"
+                target="_blank"
+                ><img
+                  src="{{ url_for('static', filename='images/logo.svg') }}"
+                  alt="Image 1"
+              /></a>
+              <small class="mt-2">2024.04.2-Demo (release 0.3.0)</small>
+            </div>
+          </div>
+          <div class="col-md-3 footer-column-box">
+            <div class="footer-column">
+              <a
+                href="https://ec.europa.eu/digital-building-blocks/sites/display/EUDIGITALIDENTITYWALLET/EU+Digital+Identity+Wallet+Home"
+                target="_blank"
+                >About Us</a
+              >
+            </div>
+          </div>
+          <div class="col-md-3 footer-column-box">
+            <div class="footer-column">
+              <a href="mailto:CNECT-EUDIW-SUPPORT@ec.europa.eu">Contact Us</a>
+            </div>
+          </div>
+          <div class="col-md-3 footer-column-box">
+            <div class="footer-column">
+              <a
+                href="pdf/EU Digital Identity Wallet website_privacy statement.pdf"
+                target="_blank"
+                >Privacy Statement</a
+              >
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
 </html>

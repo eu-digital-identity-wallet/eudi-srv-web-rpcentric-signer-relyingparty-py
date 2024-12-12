@@ -15,9 +15,6 @@
 # limitations under the License.
 #
 ###############################################################################
-from http.client import HTTPException
-import json
-import os
 
 from flask import Flask, render_template
 from flask_cors import CORS
@@ -28,3 +25,4 @@ from app import create_app
 from app.app_config.config import ConfService
 
 app = create_app()
+

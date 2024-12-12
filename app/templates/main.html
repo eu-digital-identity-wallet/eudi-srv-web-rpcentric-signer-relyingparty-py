@@ -1,0 +1,31 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row" style="height: 100%">
+  <div class="col-lg-12" style="height: 100%">
+    <div
+      id="content"
+      class="content-wrap1 content-center col-md-11 col-sm-11"
+      style="height: 100%"
+    >
+      <h1>Welcome to the Relying Party Tester</h1>
+      <p>
+        This a web-app tester of a Relying Party in the environment of the EUDI
+        Wallet rQES.
+      </p>
+      <div class="genericErrors" id="genericErrorsDesc"></div>
+      <form
+        action="{{ redirect_url }}/login"
+        method="GET"
+        style="
+          height: 70%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        "
+      >
+        <!-- Submit button -->
+        <button class="btn btn-primary" type="submit">Login</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
