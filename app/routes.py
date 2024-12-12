@@ -148,68 +148,6 @@ def service_authorization():
         message = response.json()["message"]
         return message, 400
 
-# Obtain Access Token with scope="credential"
-# If not authenticated redirects to authentication page
-@sca.route("/tester/credential_authorization", methods=['GET', 'POST'])
-def credential_authorization():
-    print("Bearer " + session["service_access_token"])
-    
-    # Get the form data
-    form_local = session["form_global"]
-
-    filename = form_local["filename"]
-    # Check if the filename is provided
-    if not filename:
-        return "Filename is required", 400  # Return an error if filename is None
-
-    base64_document = get_base64_document(filename)
-    container=form_local["container"]
-    
-    signature_format=get_signature_format_simplified(form_local["signature_format"])
-    signed_envelope_property= form_local["packaging"]
-    conformance_level= form_local["level"]
-    hash_algorithm_oid=form_local["digest_algorithm"]        
-
-    calculate_hash_json = sca_client.calculate_hash_request(
-        base64_document,
-        signature_format,
-        conformance_level,
-        signed_envelope_property,
-        container,
-        session["end_entity_certificate"],
-        session["certificate_chain"],
-        hash_algorithm_oid
-    )
-    hashes = calculate_hash_json["hashes"]
-    if(session.get("hashes") is not None):
-        session.pop("hashes")
-    session["hashes"] = hashes
-    
-    print(session["hashes"])
-    
-    signature_date = calculate_hash_json["signature_date"]
-    if(session.get("signature_date") is not None):
-        session.pop("signature_date")
-    session["signature_date"] = signature_date
-   
-    global code_verifier
-    code_verifier = secrets.token_urlsafe(32)    
-    code_challenge_method = "S256"
-    code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
-    code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).rstrip(b'=').decode()
-    
-    hashes_string = ";".join(hashes)
-    print(hashes_string)
-    
-    response = qtsp_client.oauth2_authorize_credential_request(code_challenge, code_challenge_method, 1, hashes_string, hash_algorithm_oid, session["credentialChosen"])
-
-    if(response.status_code == 302): # redirects to the QTSP OID4VP Authentication Page
-        location = response.headers.get("Location")
-        print("Location to authenticate: "+ location)
-        return redirect(location)
-    else:
-        message = response.json()["message"]
-        return message, 400
 
 # endpoint where the qtsp will be redirected to after authentication
 @sca.route("/tester/oauth2/callback", methods=["GET", "POST"])
@@ -289,6 +227,69 @@ def setCredentialId():
         print("Key Algo: "+key_algo)
     return "success"
 
+# Obtain Access Token with scope="credential"
+# If not authenticated redirects to authentication page
+@sca.route("/tester/credential_authorization", methods=['GET', 'POST'])
+def credential_authorization():
+    print("Bearer " + session["service_access_token"])
+    
+    # Get the form data
+    form_local = session["form_global"]
+
+    filename = form_local["filename"]
+    # Check if the filename is provided
+    if not filename:
+        return "Filename is required", 400  # Return an error if filename is None
+
+    base64_document = get_base64_document(filename)
+    container=form_local["container"]
+    
+    signature_format=get_signature_format_simplified(form_local["signature_format"])
+    signed_envelope_property= form_local["packaging"]
+    conformance_level= form_local["level"]
+    hash_algorithm_oid=form_local["digest_algorithm"]        
+
+    calculate_hash_json = sca_client.calculate_hash_request(
+        base64_document,
+        signature_format,
+        conformance_level,
+        signed_envelope_property,
+        container,
+        session["end_entity_certificate"],
+        session["certificate_chain"],
+        hash_algorithm_oid
+    )
+    hashes = calculate_hash_json["hashes"]
+    if(session.get("hashes") is not None):
+        session.pop("hashes")
+    session["hashes"] = hashes
+    
+    print(session["hashes"])
+    
+    signature_date = calculate_hash_json["signature_date"]
+    if(session.get("signature_date") is not None):
+        session.pop("signature_date")
+    session["signature_date"] = signature_date
+   
+    global code_verifier
+    code_verifier = secrets.token_urlsafe(32)    
+    code_challenge_method = "S256"
+    code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
+    code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).rstrip(b'=').decode()
+    
+    hashes_string = ";".join(hashes)
+    print(hashes_string)
+    
+    response = qtsp_client.oauth2_authorize_credential_request(code_challenge, code_challenge_method, 1, hashes_string, hash_algorithm_oid, session["credentialChosen"])
+
+    if(response.status_code == 302): # redirects to the QTSP OID4VP Authentication Page
+        location = response.headers.get("Location")
+        print("Location to authenticate: "+ location)
+        return redirect(location)
+    else:
+        message = response.json()["message"]
+        return message, 400
+
 @sca.route("/tester/sign_document")
 def sign_document():
     
@@ -344,7 +345,6 @@ def sign_document():
         document_filename=new_name
     )
 
-
 @sca.route("/tester/sca_signature_flow", methods=['GET', 'POST'])
 def sca_signature_flow():
     print("Bearer " + session["service_access_token"])
@@ -380,7 +380,6 @@ def sca_signature_flow():
         message = response.json()["message"]
         return message, 400
 
-
 @sca.route("/tester/signed_document_download", methods=['GET', 'POST'])
 def signed_document_download():
     
@@ -407,8 +406,6 @@ def signed_document_download():
         document_filename=new_name
     )
 
-
-    
 def get_base64_document(filename):
     # Construct the path to the file in the "docs" folder
     file_path = os.path.join(cfgserv.LOAD_FOLDER, filename)

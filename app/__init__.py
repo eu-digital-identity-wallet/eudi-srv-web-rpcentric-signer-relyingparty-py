@@ -21,7 +21,6 @@ import os
 import sys
 
 from requests import Session
-import requests
 
 from app.app_config.config import ConfService
 
