@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>Select Signing Options</h1>
+
+<!-- Display file name -->
+<div class="row">
+    <div class="col-lg-12">
+        <h1>Wallet Test</h1>
+        <div id="content" class="content-wrap1 content-center col-md-11 col-sm-11">
+            <div class="genericErrors" id="genericErrorsDesc"></div>
+            
+            <p><strong>File Name:</strong> {{ filename }}</p>
+
+            <!-- Preview the file -->
+            <iframe src="/docs/{{ filename }}" width="600" height="400" style="border: 1px solid #ccc;"></iframe>
+
+            <!-- Form to send data -->
+            <form action="{{ redirect_url }}/authorization_credential" method="post">
+                <!-- Hidden input to send filename -->
+                <input type="hidden" name="filename" value="{{ filename }}">
+
+                <!-- Container Option (only if XAdES or CAdES) -->
+                {% if signature_format in ['XAdES', 'CAdES'] %}
+                    <label for="container">Container:</label>
+                    <select name="container" id="container" onchange="updatePackagingOptions()">
+                        <option value="No">No</option>
+                        <option value="ASiC-S">ASiC-S</option>
+                        <option value="ASiC-E">ASiC-E</option>
+                    </select>
+                {% else %}
+                    <input type="hidden" name="container" id="container" value="No">
+                {% endif %}
+
+                <!-- Signature Format -->
+                <p><strong>Signature Format:</strong> {{ signature_format }}</p>
+                <input type="hidden" name="signature_format" value="{{ signature_format }}">
+
+                <!-- Packaging Options (radio buttons) -->
+                <div class="col-md-12">
+                    <div id="packaging-options">
+                        <p><strong>Packaging:</strong></p>
+                        {% if signature_format == 'PAdES' %}
+                            <input type="radio" name="packaging" value="ENVELOPED" checked> Enveloped<br>
+                        {% elif signature_format == 'XAdES' %}
+                            <input type="radio" name="packaging" value="ENVELOPED" checked> Enveloped<br>
+                            <input type="radio" name="packaging" value="ENVELOPING"> Enveloping<br>
+                            <input type="radio" name="packaging" value="DETACHED"> Detached<br>
+                            <input type="radio" name="packaging" value="INTERNALLY DETACHED"> Internally Detached<br>
+                        {% elif signature_format == 'CAdES' %}
+                            <input type="radio" name="packaging" value="ENVELOPING" checked> Enveloping<br>
+                            <input type="radio" name="packaging" value="DETACHED"> Detached<br>
+                        {% elif signature_format == 'JAdES' %}
+                            <input type="radio" name="packaging" value="ENVELOPING" checked> Enveloping<br>
+                            <input type="radio" name="packaging" value="DETACHED"> Detached<br>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Level Options -->
+                <div class="col-md-12">
+                    <p><strong>Level:</strong></p>
+                    <div class="form-group">
+                        <select name="level">
+                            <option value="Ades-B-B" selected>BASELINE-B</option>
+                            <option value="Ades-B-T">BASELINE-T</option>
+                            <option value="Ades-B-LT">BASELINE-LT</option>
+                            <option value="Ades-B-LTA">BASELINE-LTA</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Digest Algorithm Options (radio buttons) -->
+                <div class="col-md-12">
+                    <p><strong>Digest Algorithm:</strong></p>
+                    <input type="radio" name="digest_algorithm" value="2.16.840.1.101.3.4.2.1" checked> SHA256<br>
+                    <input type="radio" name="digest_algorithm" value="2.16.840.1.101.3.4.2.2"> SHA384<br>
+                    <input type="radio" name="digest_algorithm" value="2.16.840.1.101.3.4.2.3"> SHA512<br>
+                </div>
+
+                <!-- Button to continue -->
+                <button type="submit" class="btn btn-primary">Continue</button>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function updatePackagingOptions() {
+        const container = document.getElementById("container").value;
+        const packagingDiv = document.getElementById("packaging-options");
+
+        let signatureFormat = "{{ signature_format }}";
+        let packagingHtml = "";
+
+        if (container === "ASiC-S" || container === "ASiC-E") {
+            if (signatureFormat === "XAdES" || signatureFormat === "CAdES") {
+                packagingHtml += '<input type="radio" name="packaging" value="DETACHED" checked> Detached<br>';
+            }
+        } else {
+            if (signatureFormat === "PAdES") {
+                packagingHtml += '<input type="radio" name="packaging" value="ENVELOPED" checked> Enveloped<br>';
+            } else if (signatureFormat === "XAdES") {
+                packagingHtml += '<input type="radio" name="packaging" value="ENVELOPED" checked> Enveloped<br>';
+                packagingHtml += '<input type="radio" name="packaging" value="ENVELOPING"> Enveloping<br>';
+                packagingHtml += '<input type="radio" name="packaging" value="DETACHED"> Detached<br>';
+                packagingHtml += '<input type="radio" name="packaging" value="INTERNALLY DETACHED"> Internally Detached<br>';
+            } else if (signatureFormat === "CAdES") {
+                packagingHtml += '<input type="radio" name="packaging" value="ENVELOPING" checked> Enveloping<br>';
+                packagingHtml += '<input type="radio" name="packaging" value="DETACHED"> Detached<br>';
+            } else if (signatureFormat === "JAdES") {
+                packagingHtml += '<input type="radio" name="packaging" value="ENVELOPING" checked> Enveloping<br>';
+                packagingHtml += '<input type="radio" name="packaging" value="DETACHED"> Detached<br>';
+            }
+        }
+
+        packagingDiv.innerHTML = `<p><strong>Packaging:</strong></p>` + packagingHtml;
+    }
+</script>
+
+{% endblock %}
