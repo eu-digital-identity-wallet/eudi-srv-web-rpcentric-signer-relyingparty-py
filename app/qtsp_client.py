@@ -41,7 +41,6 @@ def oauth2_authorize_service_request(code_challenge, code_challenge_method):
 
 def oauth2_authorize_credential_request(code_challenge, code_challenge_method, num_signatures, hashes, hash_algorithm_oid, credential_id):
     url = cfgserv.AS+"/oauth2/authorize?response_type=code&client_id="+cfgserv.oauth_client_id+"&redirect_uri=" + cfgserv.oauth_redirect_uri+"&scope=credential&code_challenge="+code_challenge+"&code_challenge_method="+code_challenge_method+"&state=12345678&numSignatures=1&hashes="+hashes+"&hashAlgorithmOID="+hash_algorithm_oid+"&credentialID="+credential_id
-    print(url)
         
     # params = {
     #     "response_type":"code",

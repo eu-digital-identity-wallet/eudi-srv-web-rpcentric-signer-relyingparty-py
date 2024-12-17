@@ -3,26 +3,24 @@
 <!-- Display file name -->
 <div class="row">
   <div class="col-lg-12">
-    <h1>Select Signing Options</h1>
-    <div id="content" class="content-wrap1 content-center col-md-11 col-sm-11">
+    <div id="content" class="content-box col-md-11">
       <div class="genericErrors" id="genericErrorsDesc"></div>
 
-      <p><strong>File Name:</strong> {{ filename }}</p>
+      <h1>Sign Document</h1>
+      <h2>Select Signature Options</h2>
 
-      <!-- Preview the file -->
       <iframe
         src="/docs/{{ filename }}"
         width="600"
         height="400"
-        style="border: 1px solid #ccc"
+        style="border: 1px solid #ccc; margin-top: 10px"
       ></iframe>
 
-      <!-- Form to send data -->
+      <p><strong>File Name:</strong> {{ filename }}</p>
       <form action="{{ redirect_url }}/service_authorization" method="post">
-        <!-- Hidden input to send filename -->
         <input type="hidden" name="filename" value="{{ filename }}" />
 
-        <!-- Container Option (only if XAdES or CAdES) -->
+        <!--Container-->
         {% if signature_format in ['XAdES', 'CAdES'] %}
         <label for="container">Container:</label>
         <select
@@ -38,7 +36,7 @@
         <input type="hidden" name="container" id="container" value="No" />
         {% endif %}
 
-        <!-- Signature Format -->
+        <!--Signature Format-->
         <p><strong>Signature Format:</strong> {{ signature_format }}</p>
         <input
           type="hidden"
@@ -46,7 +44,7 @@
           value="{{ signature_format }}"
         />
 
-        <!-- Packaging Options (radio buttons) -->
+        <!--Packaging-->
         <div class="col-md-12">
           <div id="packaging-options">
             <p><strong>Packaging:</strong></p>
@@ -76,7 +74,7 @@
           </div>
         </div>
 
-        <!-- Level Options -->
+        <!--Level-->
         <div class="col-md-12">
           <p><strong>Level:</strong></p>
           <div class="form-group">
@@ -89,7 +87,7 @@
           </div>
         </div>
 
-        <!-- Digest Algorithm Options (radio buttons) -->
+        <!--Digest Algorithm-->
         <div class="col-md-12">
           <p><strong>Digest Algorithm:</strong></p>
           <input
@@ -113,7 +111,6 @@
           SHA512<br />
         </div>
 
-        <!-- Button to continue -->
         <button type="submit" class="btn btn-primary">Continue</button>
       </form>
     </div>

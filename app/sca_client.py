@@ -108,7 +108,7 @@ def signature_flow(authorization_header, credentialId, document, signature_forma
         "hashAlgorithmOID": hash_algorithm_oid,
         "resourceServerUrl": cfgserv.RS,
         "authorizationServerUrl": cfgserv.AS,
-        "redirectUri": "http://127.0.0.1:5000/tester/signed_document_download"
+        "redirectUri": cfgserv.service_url+"/signed_document_download"
     })
 
     response = requests.post(url, headers=headers, data=payload, allow_redirects=False)

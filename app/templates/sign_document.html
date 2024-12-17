@@ -1,8 +1,9 @@
 {% extends 'base.html' %} {% block content %}
-<div class="row">
-  <div class="col-lg-12">
-    <h1>Signed Document</h1>
-    <div id="content" class="content-wrap1 content-center col-md-11 col-sm-11">
+<div class="row" style="height: 100%">
+  <div class="col-lg-12" style="height: 100%">
+    <div id="content" class="content-box col-md-11">
+      <h1>Signed Document</h1>
+
       <div class="genericErrors" id="genericErrorsDesc"></div>
 
       <!-- Preview the file -->
@@ -15,9 +16,17 @@
         type="application/pdf"
       ></iframe>
 
-      <button id="download_button" onclick="downloadPDF()">
-        <i class="fa fa-download"></i> Download
-      </button>
+      <div class="download-container">
+        <button
+          class="sign-custom-btn"
+          id="download_button"
+          onclick="downloadPDF()"
+        >
+          <i class="fa fa-download"></i> Download
+        </button>
+
+        <a class="sign-custom-btn" href="{{ url_for('SCA.account') }}">Close</a>
+      </div>
     </div>
   </div>
 </div>

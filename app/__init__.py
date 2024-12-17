@@ -15,36 +15,23 @@
 # limitations under the License.
 #
 ###############################################################################
-from http.client import HTTPException
-import json
+
+"""
+Application Initialization File:
+Handles application setup, configuration, and exception handling.
+"""
+
 import os
 import sys
-
-from requests import Session
-
-from app.app_config.config import ConfService
-
-
-sys.path.append(os.path.dirname(__file__))
-
-
-from flask import Flask, jsonify, render_template
+from flask import Flask, render_template
 from flask_session import Session
 from flask_cors import CORS
-import base64
-from binascii import unhexlify
-from pycose.messages import Sign1Message
-import cbor2
-from pycose.keys import EC2Key, CoseKey
+from app.app_config.config import ConfService
 
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
-from cryptography import x509
-from app_config.config import ConfService as cfgserv
-
+# Extend system path to include the current directory
+sys.path.append(os.path.dirname(__file__))
 
 def handle_exception(e):
-
     return (
         render_template(
             "500.html",
@@ -67,21 +54,35 @@ def page_not_found(e):
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
     app.config['SECRET_KEY'] = ConfService.secret_key
+    
+    
+    # Initialize LoginManager
+    from flask_login import LoginManager
+    login_manager = LoginManager()
+    login_manager.login_view = 'SCA.login'
+    login_manager.init_app(app)
 
-    #app.register_error_handler(Exception, handle_exception)
+    @login_manager.user_loader
+    def load_user(user_id):
+        from model.user import User
+        from model.user_service import UserService
+        print(user_id)
+        return User(user_id) if any(user['username'] == user_id for user in UserService.get_users()) else None    
+
+    # Register error handlers
     app.register_error_handler(404, page_not_found)
 
+    # Register routes
     from . import (routes)
-
     app.register_blueprint(routes.sca)
 
-    # config session
+    # Configure session
     app.config["SESSION_FILE_THRESHOLD"] = 50
     app.config["SESSION_PERMANENT"] = False
     app.config["SESSION_TYPE"] = "filesystem"
     app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
     Session(app)
 
-    # CORS is a mechanism implemented by browsers to block requests from domains other than the server's one.
+    # Configure CORS
     CORS(app, supports_credentials=True, resources={r"/tester/*": {"origins": "http://localhost:8084"}})
     return app

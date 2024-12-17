@@ -15,34 +15,26 @@
 # limitations under the License.
 ###############################################################################
 
+import os
 import base64
-import io
+import hashlib
+import secrets
 import mimetypes
 from flask import (
-    Blueprint,
-    render_template,
-    request,
-    session,
-    send_from_directory,
-    redirect,
-    url_for,
-    flash
+    Blueprint, render_template, request, session, send_from_directory, redirect, url_for, flash
 )
-import os
-from flask import Flask, request, session
-import base64
-import secrets
-import hashlib
+from flask_login import login_user, logout_user, login_required, current_user
 from app_config.config import ConfService as cfgserv
 
+from model.user_service import UserService
+from model.user import User
 import qtsp_client, sca_client
+
 
 sca = Blueprint("SCA", __name__, url_prefix="/")
 sca.template_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template/')
-UPLOAD_FOLDER = 'documents'
-app = Flask(__name__)
 
-global code_verifier
+UPLOAD_FOLDER = 'documents'
 
 @sca.route('/', methods=['GET', 'POST'])
 def index():
@@ -52,34 +44,44 @@ def index():
 def main():
     return render_template('main.html', redirect_url= cfgserv.service_url)
 
+########
+
+@sca.route('/tester/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = UserService.login(username, password)
+        if(user is not None):
+            login_user(user)
+            return redirect(url_for('SCA.account'))
+        else:
+            flash('Login failed! Please check your username and password.')
+    users = UserService.get_users()
+    return render_template('login.html', redirect_url= cfgserv.service_url, rp_users = users)
+
+@sca.route('/tester/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('SCA.login'))
+
 @sca.route('/tester/account', methods=['GET', 'POST'])
+@login_required
 def account():
     return render_template('account.html', redirect_url= cfgserv.service_url)
 
-@sca.route('/tester/login', methods=['GET'])
-def login_get():
-    username = request.form.get("username")
-    password = request.form.get("password")
-    return render_template('login.html', redirect_url= cfgserv.service_url, rp_users = cfgserv.rp_users)
+########
 
-
-@sca.route('/tester/login', methods=['POST'])
-def login():
-    username = request.form.get("username")
-    password = request.form.get("password")
-    
-    for user in cfgserv.rp_users:
-        if user['username'] == username and user['password'] == password: 
-            return redirect(url_for('SCA.account'))
-    flash('Login failed! Please check your username and password.')
-    return render_template('login.html', redirect_url= cfgserv.service_url, rp_users = cfgserv.rp_users)
 
 @sca.route('/tester/select_document', methods=['GET','POST'])
+@login_required
 def select_document():
-    return render_template('select_doc.html', redirect_url= cfgserv.service_url)
+    return render_template('select_document.html', redirect_url= cfgserv.service_url)
 
 # Present page with signing options
 @sca.route('/tester/check_options')
+@login_required
 def check():
     document_type = request.args.get('document')
     if document_type == 'pdf':
@@ -133,11 +135,15 @@ def service_authorization():
     session["form_global"] = form_local
     
     # makes the oauth2/authorize request:
-    global code_verifier
-    code_verifier = secrets.token_urlsafe(32)    
+    code_verifier = secrets.token_urlsafe(32)   
     code_challenge_method = "S256"
     code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
     code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).rstrip(b'=').decode()
+    
+    if(session.get("code_verifier") is not None):
+        session.pop("code_verifier")
+    session["code_verifier"] = code_verifier
+    
     response = qtsp_client.oauth2_authorize_service_request(code_challenge, code_challenge_method)
     
     if(response.status_code == 302): # redirects to the QTSP OID4VP Authentication Page
@@ -147,7 +153,6 @@ def service_authorization():
     else:
         message = response.json()["message"]
         return message, 400
-
 
 # endpoint where the qtsp will be redirected to after authentication
 @sca.route("/tester/oauth2/callback", methods=["GET", "POST"])
@@ -161,6 +166,7 @@ def oauth_login_code():
     error_description=request.args.get("error_description")
     print(f"Error Description: {error_description}")
 
+    code_verifier = session["code_verifier"]
     print(f"Code Verifier: {code_verifier}")
     
     if(code == None):
@@ -181,11 +187,10 @@ def oauth_login_code():
             access_token = response_json["access_token"]
             print("access token: "+access_token)
             scope = response_json["scope"]
-            print("scope: "+scope)
             
             if(scope == "service"):
                 session["service_access_token"] = access_token
-                return render_template('credential.html', redirect_url= cfgserv.service_url)
+                return redirect(url_for("SCA.credentials_list"))
             elif(scope == "credential"):
                 session["credential_access_token"] = access_token
                 return redirect(url_for("SCA.sign_document"))
@@ -193,7 +198,11 @@ def oauth_login_code():
 @sca.route("/tester/credentials_list", methods=["GET", "POST"])
 def credentials_list():
     response = qtsp_client.csc_v2_credentials_list(session["service_access_token"])
-    return response.json()
+    credentials = response.json()
+    credentials_ids_list = credentials["credentialIDs"]
+    print(credentials_ids_list)
+    return render_template('credential.html', redirect_url=cfgserv.service_url, credentials=credentials_ids_list)
+
 
 @sca.route("/tester/set_credential_id", methods=["GET", "POST"])
 def setCredentialId():
@@ -201,8 +210,6 @@ def setCredentialId():
         session.pop("credentialChosen")
         
     session["credentialChosen"] = request.get_json().get("credentialID")
-    print(session["credentialChosen"])
-    
     
     credential_info=qtsp_client.csc_v2_credentials_info(session["service_access_token"], session["credentialChosen"])
 
@@ -212,7 +219,7 @@ def setCredentialId():
         
         certificate_info = credential_info_json["cert"]
         certificates = certificate_info["certificates"]
-        print("Certificates: "+certificates)
+        print(certificates)
         
         if(session.get("end_entity_certificate") is not None):
             session.pop("end_entity_certificate")
@@ -271,11 +278,14 @@ def credential_authorization():
         session.pop("signature_date")
     session["signature_date"] = signature_date
    
-    global code_verifier
     code_verifier = secrets.token_urlsafe(32)    
     code_challenge_method = "S256"
     code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
     code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).rstrip(b'=').decode()
+    
+    if(session.get("code_verifier") is not None):
+        session.pop("code_verifier")
+    session["code_verifier"] = code_verifier
     
     hashes_string = ";".join(hashes)
     print(hashes_string)
