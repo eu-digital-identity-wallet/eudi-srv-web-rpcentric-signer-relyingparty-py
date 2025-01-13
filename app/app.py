@@ -15,16 +15,14 @@
 # limitations under the License.
 #
 ###############################################################################
-from http.client import HTTPException
-import json
-import os
 
-from flask import Flask, render_template
-from flask_cors import CORS
-from flask_session import Session
+"""
+Application Entry Point: 
+Initializes and runs the Flask application.
+"""
 
 from app import create_app
 
-from app.app_config.config import ConfService
-
+# Create the Flask app instance
 app = create_app()
+

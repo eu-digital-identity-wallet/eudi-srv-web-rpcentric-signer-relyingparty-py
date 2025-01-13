@@ -106,7 +106,6 @@ html {
 }
 
 body {
-    margin-bottom: 165px;
     background: #d8d8d8;
     background: -moz-radial-gradient(center, ellipse cover, #f2f2f2 0, #afafaf 100%);
     background: -webkit-radial-gradient(center, ellipse cover, #f2f2f2 0, #afafaf 100%);

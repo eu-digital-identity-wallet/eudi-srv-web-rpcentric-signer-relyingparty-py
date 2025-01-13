@@ -20,34 +20,15 @@ This config.py contains configuration data.
 """
 
 class ConfService:
-    secret_key = "secret_key"
+    secret_key = "secret_here"
 
-    service_url = "http://127.0.0.1:5000/tester"
-    AS="https://walletcentric.signer.eudiw.dev"
-    RS="https://walletcentric.signer.eudiw.dev"
-    SCA="https://walletcentric.signer.eudiw.dev"
+    service_url = "rp_web_page_here"
+    AS="qtsp_as_url_here"
+    RS="qtsp_rs_url_here"
+    SCA="rp_internal_sca_url_here"
     
-    oauth_client_id = "local-client-tester"
-    oauth_client_secret = "somesecret3"
-    oauth_redirect_uri = "http://127.0.0.1:5000/tester/oauth/login/code"
-
-    alg_oid={
-        "SHA256":"1.2.840.113549.1.1.11",
-        "SHA384":"1.2.840.113549.1.1.12",
-        "SHA512":"1.2.840.113549.1.1.13"
-    }
+    oauth_client_id = "client_id_here"
+    oauth_client_secret = "client_secret_here"
+    oauth_redirect_uri = service_url+"/oauth2/callback"
 
     LOAD_FOLDER = 'app/docs' 
-
-    rp_users = [
-        {
-            'username': 'rp',
-            'password': 'pass123',
-            'data': 'Seven street'
-        },
-        {
-            'username': 'user1',
-            'password': 'pass456',
-            'data': 'Nine street'
-        }
-    ]
