@@ -55,7 +55,6 @@ def create_app():
     app = Flask(__name__, instance_relative_config=True)
     app.config['SECRET_KEY'] = ConfService.secret_key
     
-    
     # Initialize LoginManager
     from flask_login import LoginManager
     login_manager = LoginManager()
@@ -76,13 +75,15 @@ def create_app():
     from . import (routes)
     app.register_blueprint(routes.sca)
 
-    # Configure session
-    app.config["SESSION_FILE_THRESHOLD"] = 50
-    app.config["SESSION_PERMANENT"] = False
+    # Configure session    
     app.config["SESSION_TYPE"] = "filesystem"
+    app.config["SESSION_FILE_THRESHOLD"] = 50
+    app.config["SESSION_PERMANENT"] = False # Controls whether sessions persist between app restarts.
+    app.config['SESSION_USE_SIGNER'] = True # Ensures sessions are cryptographically signed to prevent tampering
+    app.config['SESSION_KEY_PREFIX'] = 'rp-centric-session:'
     app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
     Session(app)
 
     # Configure CORS
-    CORS(app, supports_credentials=True, resources={r"/tester/*": {"origins": "http://localhost:8084"}})
+    CORS(app, supports_credentials=True, resources={r"/tester/*": {"origins": ConfService.AS}})
     return app

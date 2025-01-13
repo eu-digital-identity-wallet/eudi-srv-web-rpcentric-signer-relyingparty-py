@@ -39,6 +39,7 @@
         "
       ></div>
 
+      <!--Button to Continue-->
       <button class="btn btn-primary" onclick="continueAction()">
         Continue
       </button>
@@ -100,8 +101,7 @@
       alert("Please select a document before continuing.");
       return;
     }
-    // Redirect to a new route with the document type as a query parameter
-    window.location.href = `/tester/check_options?document=${selectedDocument}`;
+    window.location.href = `/tester/service_authorization?document=${selectedDocument}`;
   }
 </script>
 

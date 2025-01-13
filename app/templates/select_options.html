@@ -17,7 +17,7 @@
       ></iframe>
 
       <p><strong>File Name:</strong> {{ filename }}</p>
-      <form action="{{ redirect_url }}/service_authorization" method="post">
+      <form action="{{ redirect_url }}/signature" method="post">
         <input type="hidden" name="filename" value="{{ filename }}" />
 
         <!--Container-->
@@ -58,8 +58,8 @@
             Enveloping<br />
             <input type="radio" name="packaging" value="DETACHED" />
             Detached<br />
-            <input type="radio" name="packaging" value="INTERNALLY DETACHED" />
-            Internally Detached<br />
+            <!--<input type="radio" name="packaging" value="INTERNALLY_DETACHED" />
+            Internally Detached<br />-->
             {% elif signature_format == 'CAdES' %}
             <input type="radio" name="packaging" value="ENVELOPING" checked />
             Enveloping<br />
@@ -90,25 +90,22 @@
         <!--Digest Algorithm-->
         <div class="col-md-12">
           <p><strong>Digest Algorithm:</strong></p>
+
+          {% for algorithm in digest_algorithms %}
           <input
             type="radio"
             name="digest_algorithm"
-            value="2.16.840.1.101.3.4.2.1"
-            checked
+            value="{{ algorithm.oid }}"
+            {%
+            if
+            loop.first
+            %}checked{%
+            endif
+            %}
           />
-          SHA256<br />
-          <input
-            type="radio"
-            name="digest_algorithm"
-            value="2.16.840.1.101.3.4.2.2"
-          />
-          SHA384<br />
-          <input
-            type="radio"
-            name="digest_algorithm"
-            value="2.16.840.1.101.3.4.2.3"
-          />
-          SHA512<br />
+          {{ algorithm.name }}
+          <br />
+          {% endfor %}
         </div>
 
         <button type="submit" class="btn btn-primary">Continue</button>
@@ -141,8 +138,7 @@
           '<input type="radio" name="packaging" value="ENVELOPING"> Enveloping<br>';
         packagingHtml +=
           '<input type="radio" name="packaging" value="DETACHED"> Detached<br>';
-        packagingHtml +=
-          '<input type="radio" name="packaging" value="INTERNALLY DETACHED"> Internally Detached<br>';
+        // packagingHtml += '<input type="radio" name="packaging" value="INTERNALLY_DETACHED"> Internally Detached<br>';
       } else if (signatureFormat === "CAdES") {
         packagingHtml +=
           '<input type="radio" name="packaging" value="ENVELOPING" checked> Enveloping<br>';

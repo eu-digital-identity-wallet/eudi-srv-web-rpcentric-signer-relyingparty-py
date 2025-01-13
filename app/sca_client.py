@@ -87,7 +87,7 @@ def obtain_signed_document(document, signature_format, conformance_level, signed
     return response
 
 def signature_flow(authorization_header, credentialId, document, signature_format, conformance_level, signed_envelope_property, container, hash_algorithm_oid):
-    url = cfgserv.SCA+"/signatures/start"
+    url = cfgserv.SCA+"/signatures/doc"
     
     headers = {
         'Content-Type': 'application/json',
