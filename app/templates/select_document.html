@@ -1,0 +1,108 @@
+{% extends 'base.html' %} {% block content %}
+
+<div class="row" style="height: 100%">
+  <div class="col-lg-12" style="height: 100%">
+    <div id="content" class="content-box col-md-11">
+      <div class="genericErrors" id="genericErrorsDesc"></div>
+
+      <h1>Sign Document</h1>
+      <h2>Select Document</h2>
+
+      <p>Please select one of the example documents</p>
+
+      <div class="button-container">
+        <button class="btn sign-custom-btn" onclick="setDocument('pdf')">
+          PDF Document
+        </button>
+        <button class="btn sign-custom-btn" onclick="setDocument('json')">
+          JSON Document
+        </button>
+        <button class="btn sign-custom-btn" onclick="setDocument('xml')">
+          XML Document
+        </button>
+        <button class="btn sign-custom-btn" onclick="setDocument('txt')">
+          TXT Document
+        </button>
+      </div>
+
+      <div
+        class="preview"
+        id="previewArea"
+        style="
+          border: 1px solid #00000000;
+          padding: 20px;
+          margin-top: 10px;
+          height: 500px;
+          overflow: auto;
+          background-color: #f9f9f9;
+          width: 500px;
+        "
+      ></div>
+
+      <!--Button to Continue-->
+      <button class="btn btn-primary" onclick="continueAction()">
+        Continue
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let selectedDocument = "";
+
+  // Function to set the selected document type
+  function setDocument(type) {
+    selectedDocument = type;
+    showPreview(type);
+  }
+
+  // Function to show the document preview based on selection
+  function showPreview(type) {
+    const previewArea = document.getElementById("previewArea");
+
+    // Clear preview area
+    previewArea.innerHTML = "";
+
+    if (type === "pdf") {
+      // Show PDF document
+      const pdfEmbed = document.createElement("embed");
+      pdfEmbed.src = "/docs/sample.pdf"; // Path to the PDF
+      pdfEmbed.type = "application/pdf";
+      pdfEmbed.width = "100%";
+      pdfEmbed.height = "100%";
+      previewArea.appendChild(pdfEmbed);
+    } else if (type === "json") {
+      fetch("/docs/sample.json")
+        .then((response) => response.json())
+        .then((data) => {
+          previewArea.textContent = JSON.stringify(data, null, 4); // Pretty print JSON
+        });
+    } else if (type === "txt") {
+      fetch("/docs/sample.txt")
+        .then((response) => response.text())
+        .then((data) => {
+          previewArea.textContent = data;
+        });
+    } else if (type === "xml") {
+      fetch("/docs/sample.xml")
+        .then((response) => response.text())
+        .then((data) => {
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(data, "application/xml");
+          const xmlString = new XMLSerializer().serializeToString(xmlDoc);
+          previewArea.textContent = xmlString; // Display XML as text
+        });
+    }
+  }
+
+  // Function to handle the "Continue" button
+  function continueAction() {
+    if (selectedDocument === "") {
+      alert("Please select a document before continuing.");
+      return;
+    }
+    window.location.href = `/tester/service_authorization?document=${selectedDocument}`;
+  }
+</script>
+
+{% endblock %}

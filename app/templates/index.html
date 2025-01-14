@@ -1,0 +1,18 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row">
+  <div class="col-lg-12">
+    <h1>rQES (RP Centric)</h1>
+    <div id="content" class="content-wrap1 content-center col-md-11 col-sm-11">
+      <div class="genericErrors" id="genericErrorsDesc"></div>
+      <p>
+        Welcome to the remote Qualified Eletronic Signature component rp-centric
+        backend server.
+      </p>
+      <p>
+        A Relying Party Web Page is available at:
+        <a href="{{redirect_url}}">https://rpcentric.signer.eudiw.dev/tester</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

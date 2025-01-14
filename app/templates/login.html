@@ -1,0 +1,95 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row" style="height: 100%">
+  <div class="col-lg-12" style="height: 100%">
+    <div id="content" class="content-box col-md-11">
+      <!-- Error message display -->
+      {% with messages = get_flashed_messages() %} {% if messages %}
+      <ul class="error-message">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %} {% endwith %}
+
+      <div class="main-page-box">
+        <div class="login-box">
+          <h1>Login</h1>
+          <form action="{{ redirect_url }}/login" method="POST">
+            <label for="username">Username:</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              placeholder="Username"
+              required
+            />
+
+            <label for="password">Password:</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Password"
+              required
+            />
+
+            <!-- Submit button -->
+
+            <div class="button-container">
+              <button class="btn login-custom-btn" type="submit">Login</button>
+              <a class="btn login-custom-btn" onclick="openPopup()"
+                >Users for testing</a
+              >
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Pop-up to display test user information -->
+      <div class="popup" id="popup">
+        <div class="popup-close">
+          <button onclick="closePopup()">Close</button>
+        </div>
+        <h3>Test User Information</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Password</th>
+            </tr>
+          </thead>
+          <tbody id="user-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Pass the users from Flask to JavaScript using JSON
+  const p_users = {{ rp_users | tojson }};
+
+  function openPopup() {
+      const popup = document.getElementById('popup');
+      const tableBody = document.getElementById('user-table-body');
+
+      tableBody.innerHTML = '';
+      p_users.forEach(user => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+              <td>${user.username}</td>
+              <td>${user.password}</td>
+          `;
+          tableBody.appendChild(row);
+      });
+      popup.style.display = 'block';
+  }
+
+  function closePopup() {
+      const popup = document.getElementById('popup');
+      popup.style.display = 'none';
+      overlay.style.display = 'none';
+  }
+</script>
+
+{% endblock %}
