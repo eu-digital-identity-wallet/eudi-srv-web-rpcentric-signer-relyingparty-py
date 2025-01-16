@@ -65,7 +65,7 @@ python -m pip install --upgrade pip
 
 ### Step 5: Install Dependencies
 
-Install Flask, gunicorn and other dependencies in virtual environment
+Install Flask and other dependencies in virtual environment
 
 ```shell
 pip install -r app/requirements.txt

@@ -34,8 +34,6 @@ from cryptography.hazmat._oid import ObjectIdentifier
 sca = Blueprint("SCA", __name__, url_prefix="/")
 sca.template_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template/')
 
-UPLOAD_FOLDER = 'documents'
-
 DIGEST_OIDS = {
     "md5": "1.2.840.113549.2.5",
     "sha1": "1.3.14.3.2.26",
