@@ -43,9 +43,10 @@ def signature_flow(access_token, credentialId, document, signature_format, confo
         "hashAlgorithmOID": hash_algorithm_oid,
         "resourceServerUrl": cfgserv.RS,
         "authorizationServerUrl": cfgserv.AS,
-        "redirectUri": url_for('SCA.signed_document_download', _external=True)
+        "redirectUri": url_for('SCA.signed_document_download', _external=True, _scheme='https')
     })
-    app.logger.info("Requesting signature with credentialId.")
+    
+    app.logger.info("Requesting signature with credentialId "+credentialId)
 
     response = requests.post(url, headers=headers, data=payload, allow_redirects=False)
     app.logger.info("Made Signature Request to SCA. Status Code: "+str(response.status_code))
