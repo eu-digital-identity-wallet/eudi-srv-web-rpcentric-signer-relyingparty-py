@@ -21,8 +21,7 @@ Application Initialization File:
 Handles application setup, configuration, and exception handling.
 """
 
-import os
-import sys
+import os, sys, logging
 from flask import Flask, render_template
 from flask_session import Session
 from flask_cors import CORS
@@ -31,15 +30,6 @@ from app.app_config.config import ConfService
 # Extend system path to include the current directory
 sys.path.append(os.path.dirname(__file__))
 
-def handle_exception(e):
-    return (
-        render_template(
-            "500.html",
-            error="Sorry, an internal server error has occurred. Our team has been notified and is working to resolve the issue. Please try again later.",
-            error_code="Internal Server Error",
-        ),
-        500,
-    )
 
 def page_not_found(e):
     return (
@@ -52,8 +42,11 @@ def page_not_found(e):
     )
 
 def create_app():
+        
     app = Flask(__name__, instance_relative_config=True)
     app.config['SECRET_KEY'] = ConfService.secret_key
+    
+    app.logger.setLevel(logging.INFO)
     
     # Initialize LoginManager
     from flask_login import LoginManager
@@ -65,11 +58,23 @@ def create_app():
     def load_user(user_id):
         from model.user import User
         from model.user_service import UserService
-        print(user_id)
         return User(user_id) if any(user['username'] == user_id for user in UserService.get_users()) else None    
+
+    def handle_exception(e):
+        app.logger.error("Internal Server Error: %s", str(e), exc_info=True)
+
+        return (
+            render_template(
+                "500.html",
+                error="Sorry, an internal server error has occurred. Our team has been notified and is working to resolve the issue. Please try again later.",
+                error_code="Internal Server Error",
+            ),
+            500,
+        )
 
     # Register error handlers
     app.register_error_handler(404, page_not_found)
+    app.register_error_handler(500, handle_exception)
 
     # Register routes
     from . import (routes)

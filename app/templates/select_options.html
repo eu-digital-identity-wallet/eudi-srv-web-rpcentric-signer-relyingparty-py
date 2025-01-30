@@ -37,21 +37,21 @@
         {% endif %}
 
         <!--Signature Format-->
-        <p><strong>Signature Format:</strong> {{ signature_format }}</p>
+        <p><strong>Signature Format:</strong> {{ signature_format_name }}</p>
         <input
           type="hidden"
           name="signature_format"
-          value="{{ signature_format }}"
+          value="{{ signature_format_value }}"
         />
 
         <!--Packaging-->
         <div class="col-md-12">
           <div id="packaging-options">
             <p><strong>Packaging:</strong></p>
-            {% if signature_format == 'PAdES' %}
+            {% if signature_format_name == 'PAdES' %}
             <input type="radio" name="packaging" value="ENVELOPED" checked />
             Enveloped<br />
-            {% elif signature_format == 'XAdES' %}
+            {% elif signature_format_name == 'XAdES' %}
             <input type="radio" name="packaging" value="ENVELOPED" checked />
             Enveloped<br />
             <input type="radio" name="packaging" value="ENVELOPING" />
@@ -60,12 +60,12 @@
             Detached<br />
             <!--<input type="radio" name="packaging" value="INTERNALLY_DETACHED" />
             Internally Detached<br />-->
-            {% elif signature_format == 'CAdES' %}
+            {% elif signature_format_name == 'CAdES' %}
             <input type="radio" name="packaging" value="ENVELOPING" checked />
             Enveloping<br />
             <input type="radio" name="packaging" value="DETACHED" />
             Detached<br />
-            {% elif signature_format == 'JAdES' %}
+            {% elif signature_format_name == 'JAdES' %}
             <input type="radio" name="packaging" value="ENVELOPING" checked />
             Enveloping<br />
             <input type="radio" name="packaging" value="DETACHED" />
@@ -119,7 +119,7 @@
     const container = document.getElementById("container").value;
     const packagingDiv = document.getElementById("packaging-options");
 
-    let signatureFormat = "{{ signature_format }}";
+    let signatureFormat = "{{ signature_format_name }}";
     let packagingHtml = "";
 
     if (container === "ASiC-S" || container === "ASiC-E") {

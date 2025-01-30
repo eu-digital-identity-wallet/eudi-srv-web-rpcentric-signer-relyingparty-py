@@ -21,7 +21,7 @@ import hashlib
 import secrets
 import mimetypes
 from flask import (
-    Blueprint, render_template, request, session, send_from_directory, redirect, url_for, flash
+    Blueprint, render_template, request, session, send_from_directory, redirect, url_for, flash, current_app as app
 )
 from flask_login import login_user, logout_user, login_required
 from app_config.config import ConfService as cfgserv
@@ -51,8 +51,9 @@ DIGEST_OIDS = {
 def index():
     return render_template('index.html', redirect_url = cfgserv.service_url) 
 
-@sca.route('/tester', methods=['GET', 'POST'])
+@sca.route('/tester', methods=['GET'])
 def main():
+    app.logger.info('Load main page.')
     return render_template('main.html', redirect_url= cfgserv.service_url)
 
 ########
@@ -60,13 +61,16 @@ def main():
 @sca.route('/tester/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        app.logger.info('Login request received.')
         username = request.form['username']
         password = request.form['password']
         user = UserService.login(username, password)
         if(user is not None):
+            app.logger.info('Login successful.')
             login_user(user)
             return redirect(url_for('SCA.account'))
         else:
+            app.logger.info('Login failed.')
             flash('Login failed! Please check your username and password.')
     users = UserService.get_users()
     return render_template('login.html', redirect_url= cfgserv.service_url, rp_users = users)
@@ -74,18 +78,22 @@ def login():
 @sca.route('/tester/logout')
 @login_required
 def logout():
+    app.logger.info('Logout request received.')
     logout_user()
+    app.logger.info('Logout successful.')
     return redirect(url_for('SCA.login'))
 
 @sca.route('/tester/account', methods=['GET', 'POST'])
 @login_required
 def account():
+    app.logger.info('Load account page.')
     return render_template('account.html', redirect_url= cfgserv.service_url)
 
 ########
 @sca.route('/tester/select_document', methods=['GET'])
 @login_required
 def select_document():
+    app.logger.info("Load select_document page.")
     return render_template('select_document.html', redirect_url= cfgserv.service_url)
 
 # Obtain Access Token with scope="service"
@@ -93,6 +101,8 @@ def select_document():
 @sca.route('/tester/service_authorization', methods=['GET'])
 @login_required
 def service_authorization():
+    app.logger.info("Request for service authorization with parameters: "+str(len(request.args)))
+    app.logger.info("Document in args: "+request.args.get('document'))
     document_type = request.args.get('document')
     if document_type == 'pdf':
         filename = 'sample.pdf'
@@ -104,25 +114,20 @@ def service_authorization():
         filename = 'sample.xml'
     else:
         return "Invalid document type selected."
-        
+    
     update_session_values(variable_name="filename", variable_value=filename)
+    app.logger.info("Filename Choosen: "+filename)
         
     # makes the oauth2/authorize request:
-    code_verifier = secrets.token_urlsafe(32)   
-    code_challenge_method = "S256"
-    code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
-    code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).rstrip(b'=').decode()
-    
-    update_session_values(variable_name="code_verifier", variable_value=code_verifier)
-    
-    response = qtsp_client.oauth2_authorize_service_request(code_challenge, code_challenge_method)
-    
-    if(response.status_code == 302): # redirects to the QTSP OID4VP Authentication Page
-        location = response.headers.get("Location")
+    try:
+        app.logger.info("Requesting service authorization.")
+        code_verifier, location = qtsp_client.oauth2_authorize_service_request()
+        update_session_values(variable_name="code_verifier", variable_value=code_verifier)
+        app.logger.info("Received Service Authentication in URL: "+location)
         return redirect(location)
-    else:
-        message = response.json()["message"]
-        return message, 400
+    except ValueError as e:
+        app.logger.error("Error in service authorization: "+str(e))
+        return str(e), 400
 
 # endpoint where the qtsp will be redirected to after authentication
 # used
@@ -131,96 +136,96 @@ def oauth_login_code():
     code = request.args.get("code")
     state = request.args.get("state")
     error = request.args.get("error")
-    print(f"Error: {error}")
     error_description=request.args.get("error_description")
-    print(f"Error Description: {error_description}")
-
-    code_verifier = session["code_verifier"]
     
-    if(code == None):
+    app.logger.info("Received request with code: %s and state: %s", code, state)
+    
+    if error:
+        app.logger.error("Received Error %s: %s", error, error_description)
         return error_description, 400
-    else:
-        response = qtsp_client.oauth2_token_request(code, code_verifier) # trades the code for the access token
-        
-        if(response.status_code == 400):
-            error = response.json()["error"]
-            error_description = response.json()["error_description"]
-            return error_description
-        elif(response.status_code == 200):
-            response_json = response.json()
-            
-            access_token = response_json["access_token"]
-            scope = response_json["scope"]
-            
-            if(scope == "service"):
-                session["service_access_token"] = access_token
-                return redirect(url_for("SCA.credentials_list"))
-            elif(scope == "credential"):
-                session["credential_access_token"] = access_token
-                return redirect(url_for("SCA.sign_document"))
+    
+    code_verifier = session.get("code_verifier")
+    if code_verifier is None:
+        app.logger.error("Session key 'code_verifier' is missing.")
+        return "Session expired or invalid request.", 400
+    
+    if code is None:
+        app.logger.error("No authorization code received.")
+        return "Missing authorization code.", 400
 
+    if code_verifier is None:
+        app.logger.error("Session key 'code_verifier' is missing.")
+        return "Session expired or invalid request.", 400
+        
+    try:
+        app.logger.info("Requesting token with code: %s and code_verifier: %s", code, code_verifier)
+        scope, access_token = qtsp_client.oauth2_token_request(code, code_verifier) # trades the code for the access token
+    except ValueError as e:
+        app.logger.error("Error during OAuth token request: %s", str(e), exc_info=True)
+        return "OAuth token request failed.", 500
+    
+    if(scope == "service"):
+        update_session_values(variable_name="service_access_token", variable_value=access_token)
+        return redirect(url_for("SCA.credentials_list"))
+    elif(scope == "credential"):
+        update_session_values(variable_name="credential_access_token", variable_value=access_token)
+        return redirect(url_for("SCA.sign_document"))
+    
+    app.logger.error("Unexpected scope received: %s", scope)
+    return "Invalid scope received.", 400
+     
+        
 @sca.route("/tester/credentials_list", methods=["GET", "POST"])
 @login_required
 def credentials_list():
-    response = qtsp_client.csc_v2_credentials_list(session["service_access_token"])
-    credentials = response.json()
-    credentials_ids_list = credentials["credentialIDs"]
+    service_access_token = session.get("service_access_token")
+    credentials_ids_list = qtsp_client.csc_v2_credentials_list(service_access_token)
     return render_template('credential.html', redirect_url=cfgserv.service_url, credentials=credentials_ids_list)
 
 @sca.route("/tester/set_credential_id", methods=["GET", "POST"])
 def setCredentialId():
-    update_session_values(variable_name="credentialChosen", variable_value=request.get_json().get("credentialID"))
+    credentialId = request.get_json().get("credentialID")
+    app.logger.info("Selected credential: "+credentialId)
+    update_session_values(variable_name="credentialID", variable_value=credentialId)
 
-    credential_info = qtsp_client.csc_v2_credentials_info(session["service_access_token"], session["credentialChosen"])
-
-    if credential_info.status_code == 200:
-        credential_info_json = credential_info.json()
-        
-        certificate_info = credential_info_json["cert"]
-        certificates = certificate_info["certificates"]
-        key_info = credential_info_json["key"]
-        key_algos = key_info["algo"]
+    app.logger.info("Requesting information about the selected credential.")
+    service_access_token = session.get("service_access_token")
+    certificates, key_algos = qtsp_client.csc_v2_credentials_info(service_access_token, credentialId)
                 
-        update_session_values(variable_name="end_entity_certificate", variable_value=certificates[0])
-        update_session_values(variable_name="certificate_chain", variable_value=certificates[1])
-        update_session_values(variable_name="key_algos", variable_value=key_algos)
+    update_session_values(variable_name="end_entity_certificate", variable_value=certificates[0])
+    update_session_values(variable_name="certificate_chain", variable_value=certificates[1])
+    update_session_values(variable_name="key_algos", variable_value=key_algos)
+    
     return "success"
 
 # Present page with signing options
 @sca.route('/tester/check_options')
 @login_required
 def check():
-    filename = session["filename"]
-    signature_format = get_signature_format(filename)
+    filename = session.get("filename")
+    signature_format_name, signature_format_value = get_signature_format(filename)
     
-    key_algos = session["key_algos"]
+    key_algos = session.get("key_algos")
     hash_algos = []
     for algo in key_algos:
         hash_algo = _SIG_OIDS_TO_HASH.get(ObjectIdentifier(algo))
         if(hash_algo is not None):
             hash_algos.append({"name":hash_algo.name.upper(), "oid":DIGEST_OIDS.get(hash_algo.name.lower())})
         
-    return render_template('select_options.html', redirect_url=cfgserv.service_url, filename=filename, signature_format=signature_format, digest_algorithms=hash_algos)
+    return render_template(
+        'select_options.html', redirect_url=cfgserv.service_url, 
+        filename=filename, signature_format_name=signature_format_name,
+        signature_format_value=signature_format_value, digest_algorithms=hash_algos)
 
 def get_signature_format(filename):
     if filename.endswith('.pdf'):
-        return 'PAdES'
+        return 'PAdES', 'P'
     elif filename.endswith('.xml'):
-        return 'XAdES'
+        return 'XAdES', 'X'
     elif filename.endswith('.json'):
-        return 'JAdES'
+        return 'JAdES', 'J'
     else:
-        return 'CAdES'
-    
-def get_signature_format_simplified(signature_format):
-    if signature_format == "PAdES":
-        return 'P'
-    elif signature_format == "XAdES":
-        return 'X'
-    elif signature_format == "JAdES":
-        return 'J'
-    else:
-        return 'C'
+        return 'CAdES', 'C'
 
 # Retrieve document with given name
 @sca.route('/docs/<path:filename>')
@@ -235,53 +240,50 @@ def sca_signature_flow():
     update_session_values(variable_name="form_global", variable_value=form_local)
 
     filename = form_local["filename"]
-    # Check if the filename is provided
     if not filename:
         return "Filename is required", 400  # Return an error if filename is None
 
-    base64_document = get_base64_document(filename)
+    base64_document=get_base64_document(filename)
     container=form_local["container"]
-    
-    signature_format=get_signature_format_simplified(form_local["signature_format"])
-    signed_envelope_property= form_local["packaging"]
-    conformance_level= form_local["level"]
+    signature_format=form_local["signature_format"]
+    signed_envelope_property=form_local["packaging"]
+    conformance_level=form_local["level"]
     hash_algorithm_oid=form_local["digest_algorithm"]        
+    
+    credentialId = session.get("credentialID")
 
-    authorization_header = "Bearer " + session["service_access_token"]
-    credentialId = session["credentialChosen"]
-
-    response = sca_client.signature_flow(authorization_header, credentialId, 
+    try:
+        location = sca_client.signature_flow(session.get("service_access_token"), credentialId, 
             base64_document, signature_format, conformance_level, signed_envelope_property, 
             container, hash_algorithm_oid)
-
-    if(response.status_code == 302): # redirects to the QTSP OID4VP Authentication Page
-        location = response.headers.get("Location")
+        app.logger.info("Redirecting to QTSP OID4VP Authentication Page.")
         return redirect(location)
-    else:
-        message = response.json()["message"]
-        return message, 400
+    except ValueError as e:
+        app.logger.error("Error in signature flow: "+str(e))
+        return str(e), 400
+
 
 @sca.route("/tester/signed_document_download", methods=['GET', 'POST'])
 def signed_document_download():
-    
+    app.logger.info("Received Request with Signed Document.")
     signed_document = request.form["signed_document"]
+    app.logger.info("Signed Document present? "+str(signed_document is not None))
     
     # Get the form data
-    form_local = session["form_global"]
+    form_local = session.get("form_global")
         
     filename = form_local["filename"]
     if not filename:
         return "Filename is required", 400 # Return an error if filename is None
-    
-    signed_document_base64 = signed_document
-    
+    app.logger.info("Identified signed document of file: "+filename)
+        
     new_name = add_suffix_to_filename(os.path.basename(filename))
     mime_type, _ = mimetypes.guess_type(filename)
     
     return render_template(
         'sign_document.html',
         redirect_url=cfgserv.service_url, 
-        document_signed_value=signed_document_base64,
+        document_signed_value=signed_document,
         document_content_type=mime_type,
         document_filename=new_name
     )
@@ -290,7 +292,6 @@ def update_session_values(variable_name, variable_value):
     if(session.get(variable_name) is not None):
         session.pop(variable_name)
     session[variable_name] = variable_value
-
 
 def get_base64_document(filename):
     # Construct the path to the file in the "docs" folder
@@ -306,7 +307,6 @@ def get_base64_document(filename):
         base64_document = base64.b64encode(document.read()).decode("utf-8")
     
     return base64_document
-
 
 def add_suffix_to_filename(filename, suffix="_signed"):
     name, ext = os.path.splitext(filename)
