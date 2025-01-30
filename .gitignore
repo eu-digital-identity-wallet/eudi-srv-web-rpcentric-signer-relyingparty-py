@@ -10,8 +10,6 @@ app/app_config/config.py
 
 # Distribution / packaging
 flask_session/
-app/certs
-app/pdfs
 .Python
 build/
 develop-eggs/
