@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1]
+
+_30 Jan 2025_
+
+### Updated:
+
+- Improve error logs and refactoring.
+
 ## [0.1.0]
 
 _13 Jan 2025_
