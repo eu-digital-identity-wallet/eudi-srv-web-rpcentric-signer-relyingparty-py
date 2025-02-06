@@ -21,7 +21,7 @@
         <input type="hidden" name="filename" value="{{ filename }}" />
 
         <!--Container-->
-        {% if signature_format in ['XAdES', 'CAdES'] %}
+        {% if signature_format_name in ['XAdES', 'CAdES'] %}
         <label for="container">Container:</label>
         <select
           name="container"
@@ -58,8 +58,8 @@
             Enveloping<br />
             <input type="radio" name="packaging" value="DETACHED" />
             Detached<br />
-            <!--<input type="radio" name="packaging" value="INTERNALLY_DETACHED" />
-            Internally Detached<br />-->
+            <input type="radio" name="packaging" value="INTERNALLY_DETACHED" />
+            Internally Detached<br />
             {% elif signature_format_name == 'CAdES' %}
             <input type="radio" name="packaging" value="ENVELOPING" checked />
             Enveloping<br />

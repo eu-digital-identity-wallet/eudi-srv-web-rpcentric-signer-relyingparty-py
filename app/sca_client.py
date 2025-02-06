@@ -19,9 +19,11 @@ from flask import (
     current_app as app, url_for
 )
 
-def signature_flow(access_token, credentialId, document, signature_format, conformance_level, signed_envelope_property, container, hash_algorithm_oid):
+def signature_flow(access_token, credentialId, filename, document, signature_format, conformance_level, signed_envelope_property, container, hash_algorithm_oid):
     app.logger.info("Requesting signature to the SCA: "+cfgserv.SCA)
     url = cfgserv.SCA+"/signatures/doc"
+    
+    redirect_url = cfgserv.service_url+"/signed_document_download"
     
     authorization_header = "Bearer " + access_token
     headers = {
@@ -34,6 +36,7 @@ def signature_flow(access_token, credentialId, document, signature_format, confo
         "documents": [
             {
                 "document": document,
+                "document_name": filename,
                 "signature_format": signature_format,
                 "conformance_level": conformance_level,
                 "signed_envelope_property": signed_envelope_property,
@@ -43,7 +46,7 @@ def signature_flow(access_token, credentialId, document, signature_format, confo
         "hashAlgorithmOID": hash_algorithm_oid,
         "resourceServerUrl": cfgserv.RS,
         "authorizationServerUrl": cfgserv.AS,
-        "redirectUri": url_for('SCA.signed_document_download', _external=True, _scheme='https')
+        "redirectUri": redirect_url
     })
     
     app.logger.info("Requesting signature with credentialId "+credentialId)

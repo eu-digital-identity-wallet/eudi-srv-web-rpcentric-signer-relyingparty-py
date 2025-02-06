@@ -17,8 +17,6 @@
 
 import os
 import base64
-import hashlib
-import secrets
 import mimetypes
 from flask import (
     Blueprint, render_template, request, session, send_from_directory, redirect, url_for, flash, current_app as app
@@ -152,10 +150,6 @@ def oauth_login_code():
     if code is None:
         app.logger.error("No authorization code received.")
         return "Missing authorization code.", 400
-
-    if code_verifier is None:
-        app.logger.error("Session key 'code_verifier' is missing.")
-        return "Session expired or invalid request.", 400
         
     try:
         app.logger.info("Requesting token with code: %s and code_verifier: %s", code, code_verifier)
@@ -165,9 +159,11 @@ def oauth_login_code():
         return "OAuth token request failed.", 500
     
     if(scope == "service"):
+        remove_session_values(variable_name="code_verifier")
         update_session_values(variable_name="service_access_token", variable_value=access_token)
         return redirect(url_for("SCA.credentials_list"))
     elif(scope == "credential"):
+        remove_session_values(variable_name="code_verifier")
         update_session_values(variable_name="credential_access_token", variable_value=access_token)
         return redirect(url_for("SCA.sign_document"))
     
@@ -190,10 +186,7 @@ def setCredentialId():
 
     app.logger.info("Requesting information about the selected credential.")
     service_access_token = session.get("service_access_token")
-    certificates, key_algos = qtsp_client.csc_v2_credentials_info(service_access_token, credentialId)
-                
-    update_session_values(variable_name="end_entity_certificate", variable_value=certificates[0])
-    update_session_values(variable_name="certificate_chain", variable_value=certificates[1])
+    _, key_algos = qtsp_client.csc_v2_credentials_info(service_access_token, credentialId)
     update_session_values(variable_name="key_algos", variable_value=key_algos)
     
     return "success"
@@ -211,7 +204,9 @@ def check():
         hash_algo = _SIG_OIDS_TO_HASH.get(ObjectIdentifier(algo))
         if(hash_algo is not None):
             hash_algos.append({"name":hash_algo.name.upper(), "oid":DIGEST_OIDS.get(hash_algo.name.lower())})
-        
+    
+    remove_session_values(variable_name="key_algos")
+    
     return render_template(
         'select_options.html', redirect_url=cfgserv.service_url, 
         filename=filename, signature_format_name=signature_format_name,
@@ -236,15 +231,17 @@ def serve_docs(filename):
 def sca_signature_flow():
     # saves the form to the session:
     form_local= request.form
-        
-    update_session_values(variable_name="form_global", variable_value=form_local)
 
     filename = form_local["filename"]
     if not filename:
         return "Filename is required", 400  # Return an error if filename is None
+    app.logger.info("Signing File: "+filename)
+    update_session_values(variable_name="filename", variable_value=filename)
 
     base64_document=get_base64_document(filename)
     container=form_local["container"]
+    update_session_values(variable_name="container", variable_value=container)
+    
     signature_format=form_local["signature_format"]
     signed_envelope_property=form_local["packaging"]
     conformance_level=form_local["level"]
@@ -253,10 +250,11 @@ def sca_signature_flow():
     credentialId = session.get("credentialID")
 
     try:
-        location = sca_client.signature_flow(session.get("service_access_token"), credentialId, 
+        location = sca_client.signature_flow(session.get("service_access_token"), credentialId, filename, 
             base64_document, signature_format, conformance_level, signed_envelope_property, 
             container, hash_algorithm_oid)
         app.logger.info("Redirecting to QTSP OID4VP Authentication Page.")
+        remove_session_values(variable_name="credentialID")
         return redirect(location)
     except ValueError as e:
         app.logger.error("Error in signature flow: "+str(e))
@@ -268,17 +266,30 @@ def signed_document_download():
     app.logger.info("Received Request with Signed Document.")
     signed_document = request.form["signed_document"]
     app.logger.info("Signed Document present? "+str(signed_document is not None))
-    
-    # Get the form data
-    form_local = session.get("form_global")
-        
-    filename = form_local["filename"]
+            
+    filename = session.get("filename")
     if not filename:
         return "Filename is required", 400 # Return an error if filename is None
     app.logger.info("Identified signed document of file: "+filename)
         
-    new_name = add_suffix_to_filename(os.path.basename(filename))
-    mime_type, _ = mimetypes.guess_type(filename)
+    ext = None
+    container = session.get("container")
+    print(container)
+    if(container == "ASiC-S"):
+        mime_type = "application/vnd.etsi.asic-s+zip"
+        ext = ".zip"
+    elif(container == "ASiC-E"):
+        mime_type = "application/vnd.etsi.asic-e+zip"
+        ext = ".zip"
+    else:
+        mime_type, _ = mimetypes.guess_type(filename)
+    
+    print(mime_type)
+    
+    new_name = add_suffix_to_filename(os.path.basename(filename), new_ext=ext)
+    
+    remove_session_values(variable_name="filename")
+    remove_session_values(variable_name="container")
     
     return render_template(
         'sign_document.html',
@@ -292,6 +303,10 @@ def update_session_values(variable_name, variable_value):
     if(session.get(variable_name) is not None):
         session.pop(variable_name)
     session[variable_name] = variable_value
+
+def remove_session_values(variable_name):
+    if(session.get(variable_name) is not None):
+        session.pop(variable_name)
 
 def get_base64_document(filename):
     # Construct the path to the file in the "docs" folder
@@ -308,6 +323,11 @@ def get_base64_document(filename):
     
     return base64_document
 
-def add_suffix_to_filename(filename, suffix="_signed"):
+def add_suffix_to_filename(filename, suffix="_signed", new_ext = None):
     name, ext = os.path.splitext(filename)
+    print(ext)
+    
+    if(new_ext is not None):
+        return f"{name}{suffix}{new_ext}"
+
     return f"{name}{suffix}{ext}"
