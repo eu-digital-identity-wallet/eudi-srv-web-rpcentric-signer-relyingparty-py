@@ -1,0 +1,14 @@
+services:
+  rp_centric_relyingparty:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rp_centric_relyingparty
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_RUN_PORT: 5000
+      SERVICE_URL:
+      SECRET_KEY:
+      OAUTH2_CLIENT_ID:
+      OAUTH2_CLIENT_SECRET:

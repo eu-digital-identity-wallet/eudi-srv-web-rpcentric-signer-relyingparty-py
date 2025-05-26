@@ -29,8 +29,8 @@ from cryptography.x509.oid import _SIG_OIDS_TO_HASH
 from cryptography.hazmat._oid import ObjectIdentifier
 
 
-sca = Blueprint("SCA", __name__, url_prefix="/")
-sca.template_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template/')
+rp = Blueprint("RP", __name__, url_prefix="/")
+rp.template_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template/')
 
 DIGEST_OIDS = {
     "md5": "1.2.840.113549.2.5",
@@ -45,50 +45,47 @@ DIGEST_OIDS = {
     "sha3_512": "2.16.840.1.101.3.4.2.10",
 }
 
-@sca.route('/', methods=['GET', 'POST'])
+@rp.route('/', methods=['GET', 'POST'])
 def index():
     return render_template('index.html', redirect_url = cfgserv.service_url) 
 
-@sca.route('/tester', methods=['GET'])
+@rp.route('/tester', methods=['GET'])
 def main():
     app.logger.info('Load main page.')
     return render_template('main.html', redirect_url= cfgserv.service_url)
 
-########
-
-@sca.route('/tester/login', methods=['GET', 'POST'])
+@rp.route('/tester/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         app.logger.info('Login request received.')
         username = request.form['username']
         password = request.form['password']
         user = UserService.login(username, password)
-        if(user is not None):
+        if user is not None:
             app.logger.info('Login successful.')
             login_user(user)
-            return redirect(url_for('SCA.account'))
+            return redirect(url_for('rp.account'))
         else:
             app.logger.info('Login failed.')
             flash('Login failed! Please check your username and password.')
     users = UserService.get_users()
     return render_template('login.html', redirect_url= cfgserv.service_url, rp_users = users)
 
-@sca.route('/tester/logout')
+@rp.route('/tester/logout')
 @login_required
 def logout():
     app.logger.info('Logout request received.')
     logout_user()
     app.logger.info('Logout successful.')
-    return redirect(url_for('SCA.login'))
+    return redirect(url_for('rp.login'))
 
-@sca.route('/tester/account', methods=['GET', 'POST'])
+@rp.route('/tester/account', methods=['GET', 'POST'])
 @login_required
 def account():
     app.logger.info('Load account page.')
     return render_template('account.html', redirect_url= cfgserv.service_url)
 
-########
-@sca.route('/tester/select_document', methods=['GET'])
+@rp.route('/tester/select_document', methods=['GET'])
 @login_required
 def select_document():
     app.logger.info("Load select_document page.")
@@ -96,7 +93,7 @@ def select_document():
 
 # Obtain Access Token with scope="service"
 # If not authenticated redirects to authentication page
-@sca.route('/tester/service_authorization', methods=['GET'])
+@rp.route('/tester/service_authorization', methods=['GET'])
 @login_required
 def service_authorization():
     app.logger.info("Request for service authorization with parameters: "+str(len(request.args)))
@@ -129,7 +126,7 @@ def service_authorization():
 
 # endpoint where the qtsp will be redirected to after authentication
 # used
-@sca.route("/tester/oauth2/callback", methods=["GET", "POST"])
+@rp.route("/tester/oauth2/callback", methods=["GET", "POST"])
 def oauth_login_code():
     code = request.args.get("code")
     state = request.args.get("state")
@@ -158,27 +155,27 @@ def oauth_login_code():
         app.logger.error("Error during OAuth token request: %s", str(e), exc_info=True)
         return "OAuth token request failed.", 500
     
-    if(scope == "service"):
+    if scope == "service":
         remove_session_values(variable_name="code_verifier")
         update_session_values(variable_name="service_access_token", variable_value=access_token)
-        return redirect(url_for("SCA.credentials_list"))
-    elif(scope == "credential"):
+        return redirect(url_for("rp.credentials_list"))
+    elif scope == "credential":
         remove_session_values(variable_name="code_verifier")
         update_session_values(variable_name="credential_access_token", variable_value=access_token)
-        return redirect(url_for("SCA.sign_document"))
+        return redirect(url_for("rp.sign_document"))
     
     app.logger.error("Unexpected scope received: %s", scope)
     return "Invalid scope received.", 400
      
         
-@sca.route("/tester/credentials_list", methods=["GET", "POST"])
+@rp.route("/tester/credentials_list", methods=["GET", "POST"])
 @login_required
 def credentials_list():
     service_access_token = session.get("service_access_token")
     credentials_ids_list = qtsp_client.csc_v2_credentials_list(service_access_token)
     return render_template('credential.html', redirect_url=cfgserv.service_url, credentials=credentials_ids_list)
 
-@sca.route("/tester/set_credential_id", methods=["GET", "POST"])
+@rp.route("/tester/set_credential_id", methods=["GET", "POST"])
 def setCredentialId():
     credentialId = request.get_json().get("credentialID")
     app.logger.info("Selected credential: "+credentialId)
@@ -192,7 +189,7 @@ def setCredentialId():
     return "success"
 
 # Present page with signing options
-@sca.route('/tester/check_options')
+@rp.route('/tester/check_options')
 @login_required
 def check():
     filename = session.get("filename")
@@ -202,7 +199,7 @@ def check():
     hash_algos = []
     for algo in key_algos:
         hash_algo = _SIG_OIDS_TO_HASH.get(ObjectIdentifier(algo))
-        if(hash_algo is not None):
+        if hash_algo is not None:
             hash_algos.append({"name":hash_algo.name.upper(), "oid":DIGEST_OIDS.get(hash_algo.name.lower())})
     
     remove_session_values(variable_name="key_algos")
@@ -223,11 +220,11 @@ def get_signature_format(filename):
         return 'CAdES', 'C'
 
 # Retrieve document with given name
-@sca.route('/docs/<path:filename>')
+@rp.route('/docs/<path:filename>')
 def serve_docs(filename):
     return send_from_directory('docs', filename)
 
-@sca.route("/tester/signature", methods=['GET', 'POST'])
+@rp.route("/tester/signature", methods=['GET', 'POST'])
 def sca_signature_flow():
     # saves the form to the session:
     form_local= request.form
@@ -261,7 +258,7 @@ def sca_signature_flow():
         return str(e), 400
 
 
-@sca.route("/tester/signed_document_download", methods=['GET', 'POST'])
+@rp.route("/tester/signed_document_download", methods=['GET', 'POST'])
 def signed_document_download():
     app.logger.info("Received Request with Signed Document.")
     signed_document = request.form["signed_document"]
@@ -275,17 +272,15 @@ def signed_document_download():
     ext = None
     container = session.get("container")
     print(container)
-    if(container == "ASiC-S"):
+    if container == "ASiC-S":
         mime_type = "application/vnd.etsi.asic-s+zip"
         ext = ".zip"
-    elif(container == "ASiC-E"):
+    elif container == "ASiC-E":
         mime_type = "application/vnd.etsi.asic-e+zip"
         ext = ".zip"
     else:
         mime_type, _ = mimetypes.guess_type(filename)
-    
-    print(mime_type)
-    
+
     new_name = add_suffix_to_filename(os.path.basename(filename), new_ext=ext)
     
     remove_session_values(variable_name="filename")
@@ -300,12 +295,12 @@ def signed_document_download():
     )
 
 def update_session_values(variable_name, variable_value):
-    if(session.get(variable_name) is not None):
+    if session.get(variable_name) is not None:
         session.pop(variable_name)
     session[variable_name] = variable_value
 
 def remove_session_values(variable_name):
-    if(session.get(variable_name) is not None):
+    if session.get(variable_name) is not None:
         session.pop(variable_name)
 
 def get_base64_document(filename):
@@ -327,7 +322,7 @@ def add_suffix_to_filename(filename, suffix="_signed", new_ext = None):
     name, ext = os.path.splitext(filename)
     print(ext)
     
-    if(new_ext is not None):
+    if new_ext is not None:
         return f"{name}{suffix}{new_ext}"
 
     return f"{name}{suffix}{ext}"

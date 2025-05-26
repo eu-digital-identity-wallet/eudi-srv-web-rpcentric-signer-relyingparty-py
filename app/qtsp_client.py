@@ -26,18 +26,18 @@ from flask import (
 # It can either return a 302 response (to a authentication endpoint or the redirect uri endpoint)
 # It can return error
 def oauth2_authorize_service_request():
-    app.logger.info("Requesting authorization to the AS :"+cfgserv.AS)
+    app.logger.info("Requesting authorization to the AS :"+cfgserv.as_url)
     
     code_verifier = secrets.token_urlsafe(32)   
     code_challenge_method = "S256"
     code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
     code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).rstrip(b'=').decode()
         
-    url = cfgserv.AS+"/oauth2/authorize"
+    url = cfgserv.as_url+"/oauth2/authorize"
     params = {
         "response_type":"code",
-        "client_id": cfgserv.oauth_client_id,
-        "redirect_uri": cfgserv.oauth_redirect_uri,
+        "client_id": cfgserv.oauth2_client_id,
+        "redirect_uri": cfgserv.oauth2_redirect_uri,
         "scope":"service",
         "code_challenge": code_challenge,
         "code_challenge_method": code_challenge_method,
@@ -46,50 +46,20 @@ def oauth2_authorize_service_request():
     response = requests.get(url = url, params = params, allow_redirects = False)
     app.logger.info("Received response with status code: "+str(response.status_code))
     
-    if(response.status_code == 400):
+    if response.status_code == 400:
         message = response.json()["message"]
         app.logger.error(message)
         raise ValueError("It was impossible to retrieve the authentication link: "+message)
-    
-    elif(response.status_code == 200):
-        app.logger.info("Successful Response: "+response.data)
+    elif response.status_code == 200:
+        app.logger.info("Successful Response: "+response.text)
         return code_verifier, response
-        
-    elif(response.status_code == 302):
+    elif response.status_code == 302:
         location = response.headers["Location"]
         return code_verifier, location
-        
-        # if location.startswith("eudi-openid4vp"):   
-        #     app.logger.info("Retrieved location of authentication endpoint: "+location) 
-        #     return code_verifier, location
-        # 
-        # else:
-        #     app.logger.error("Error. Retrieved error message in: "+location)
-        #     response = requests.get(url = location)
-        #     app.logger.error("Error message: "+response.text)
-        #     raise Exception("It was impossible to retrieve the authentication link: "+response.text)
-
-    
     return response
 
 def oauth2_authorize_credential_request(code_challenge, code_challenge_method, num_signatures, hashes, hash_algorithm_oid, credential_id):
-    url = cfgserv.AS+"/oauth2/authorize?response_type=code&client_id="+cfgserv.oauth_client_id+"&redirect_uri=" + cfgserv.oauth_redirect_uri+"&scope=credential&code_challenge="+code_challenge+"&code_challenge_method="+code_challenge_method+"&state=12345678&numSignatures=1&hashes="+hashes+"&hashAlgorithmOID="+hash_algorithm_oid+"&credentialID="+credential_id
-        
-    # params = {
-    #     "response_type":"code",
-    #     "client_id": cfgserv.oauth_client_id,
-    #     "redirect_uri": cfgserv.oauth_redirect_uri,
-    #     "scope":"credential",
-    #     "code_challenge": code_challenge,
-    #     "code_challenge_method": code_challenge_method,
-    #     "state": "12345678",
-    #     "numSignatures": num_signatures,
-    #     "hashes": hashes,
-    #     "hashAlgorithmOID": hash_algorithm_oid,
-    #     "credentialID": credential_id,
-    # }
-    # print(params)
-    # response = requests.get(url=url, params = params, allow_redirects=False)
+    url = cfgserv.as_url+"/oauth2/authorize?response_type=code&client_id="+cfgserv.oauth2_client_id+"&redirect_uri=" + cfgserv.oauth2_redirect_uri+"&scope=credential&code_challenge="+code_challenge+"&code_challenge_method="+code_challenge_method+"&state=12345678&numSignatures=1&hashes="+hashes+"&hashAlgorithmOID="+hash_algorithm_oid+"&credentialID="+credential_id
     response = requests.get(url=url, allow_redirects=False)
     print(response.text)
     return response
@@ -97,7 +67,7 @@ def oauth2_authorize_credential_request(code_challenge, code_challenge_method, n
 def oauth2_token_request(code, code_verifier):
     url =  cfgserv.AS+"/oauth2/token"
         
-    value_to_encode = f"{cfgserv.oauth_client_id}:{cfgserv.oauth_client_secret}"
+    value_to_encode = f"{cfgserv.oauth2_client_id}:{cfgserv.oauth2_client_secret}"
     encoded_value = base64.b64encode(value_to_encode.encode()).decode('utf-8')
     authorization_basic = f"Basic {encoded_value}"
     headers= {
@@ -107,8 +77,8 @@ def oauth2_token_request(code, code_verifier):
     params = {
         "grant_type":"authorization_code",
         "code": code,
-        "client_id": cfgserv.oauth_client_id,
-        "redirect_uri": cfgserv.oauth_redirect_uri,
+        "client_id": cfgserv.oauth2_client_id,
+        "redirect_uri": cfgserv.oauth2_redirect_uri,
         "code_verifier": code_verifier
     }
     
@@ -116,14 +86,14 @@ def oauth2_token_request(code, code_verifier):
     response = requests.post(url = url, params = params, headers = headers, allow_redirects = False)
     app.logger.info("Response: "+str(response))
     
-    if(response.status_code == 400):
+    if response.status_code == 400:
         app.logger.error("It wasn't possible to complete the token request.")
         error = response.json()["error"]
         error_description = response.json()["error_description"]
         app.logger.error("Error in token request: "+error+" - "+error_description)
         raise ValueError("Error while trying to retrieve access: "+error+" - "+error_description)
     
-    elif(response.status_code == 200):
+    elif response.status_code == 200:
         app.logger.info("Successful oauth2 token request.")
         response_json = response.json()
         access_token = response_json["access_token"]
@@ -133,9 +103,9 @@ def oauth2_token_request(code, code_verifier):
 
 # Request to Resource Server
 def csc_v2_credentials_list(access_token):
-    app.logger.info("Requesting credentials list from the QTSP RS: "+cfgserv.RS)
+    app.logger.info("Requesting credentials list from the QTSP RS: "+cfgserv.rs_url)
     
-    url =  cfgserv.RS+"/csc/v2/credentials/list"
+    url =  cfgserv.rs_url+"/csc/v2/credentials/list"
     
     authorization_header = "Bearer "+access_token
     headers = {
@@ -151,21 +121,21 @@ def csc_v2_credentials_list(access_token):
     
     response = requests.post(url = url, data=payload, headers = headers)     
     
-    if(response.status_code == 400):
+    if response.status_code == 400:
         app.logger.error("Error retrieving credentials list from QTSP RS.")
         message = response.json()["message"]
         app.logger.error(message)
         raise ValueError("It was impossible to retrieve the credentials list from the QTSP: "+message)
     
-    elif(response.status_code == 200):
+    elif response.status_code == 200:
         app.logger.info("Retrieved credentials list from QTSP RS.")
         list_credentials_ids = response.json()["credentialIDs"]
         app.logger.info("Retrieved list of credentials ids.")
         return list_credentials_ids
 
 def csc_v2_credentials_info(access_token, credentialId):
-    app.logger.info("Requesting credential info from the QTSP RS: "+cfgserv.RS)
-    url =  cfgserv.RS+"/csc/v2/credentials/info"
+    app.logger.info("Requesting credential info from the QTSP RS: "+cfgserv.rs_url)
+    url =  cfgserv.rs_url+"/csc/v2/credentials/info"
     
     authorization_header = "Bearer "+access_token
     headers = {
@@ -183,12 +153,12 @@ def csc_v2_credentials_info(access_token, credentialId):
     app.logger.info("Requesting credential info with payload: "+payload)
     response = requests.post(url = url, data=payload, headers = headers)
     
-    if(response.status_code == 400):
+    if response.status_code == 400:
         message = response.json()["message"]
         app.logger.error(message)
         raise ValueError("It was impossible to retrieve the credential info from QTSP: "+message)
     
-    elif(response.status_code == 200):
+    elif response.status_code == 200:
         credential_info_json = response.json()
         certificates = credential_info_json["cert"]["certificates"]
         key_info = credential_info_json["key"]
@@ -196,29 +166,4 @@ def csc_v2_credentials_info(access_token, credentialId):
         app.logger.info("Retrieved credential info of credential: "+credentialId)
         return certificates, key_algos
         
-    return response
-
-def csc_v2_signatures_signHash(access_token, hashes, hash_algorithm_oid, credential_id, sign_algo):
-    url = cfgserv.RS+"/csc/v2/signatures/signHash"
-    
-    authorization_header = "Bearer "+access_token
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': authorization_header
-    }
-
-    payload = json.dumps({
-        "credentialID": credential_id,
-        "hashes": hashes,
-        "hashAlgorithmOID": hash_algorithm_oid,
-        "signAlgo": sign_algo,
-        "operationMode": "S",
-        "client_Data": "12345678"
-    })
-    
-    print(payload)
-    
-    response = requests.post(url, headers=headers, data=payload)
-    print(response.text)
-    
     return response

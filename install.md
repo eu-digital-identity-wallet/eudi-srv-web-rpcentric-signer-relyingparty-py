@@ -77,11 +77,14 @@ Copy \_config.py to config.py and modify the following configuration variables:
 
 - **secret_key**: define a secure and random key
 - **service_url**: the base URL of the service
-- **AS**: the URL of the QTSP Authorization Server (AS)
-- **RS**: the URL of the QTSP Resource Server (RS)
-- **SCA**: the URL of the RP internal SCA Server
-- **oauth_client_id**: the client ID of the RP Web Page in the QTSP AS
-- **oauth_client_secret**: the client secret of the RP Web Page in the QTSP AS
+- **as_url**: the URL of the QTSP Authorization Server (AS)
+- **rs_url**: the URL of the QTSP Resource Server (RS)
+- **sca_url**: the URL of the RP internal SCA Server
+- **oauth2_client_id**: the client ID of the RP Web Page in the QTSP AS
+- **oauth2_client_secret**: the client secret of the RP Web Page in the QTSP AS
+
+The \_config.py template supports loading configuration values from environment variables using the os.getenv() function. 
+This is especially useful when deploying the 'EUDI RP-Centric Relying Party application' using docker-compose.yml, where environment variables can be defined in the docker-compose.yml or a .env file.
 
 ### Step 7: Run the Application
 
@@ -89,4 +92,9 @@ Run the EUDI RP-Centric Relying Party application (on <http://127.0.0.1:5000>)
 
 ```shell
 flask --app app run
+```
+
+Optionally, to start the 'EUDI Wallet-Driven Relying Party' application as a Docker Container, run the command:
+```shell
+docker compose up --build
 ```

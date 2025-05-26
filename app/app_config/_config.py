@@ -18,17 +18,18 @@
 """
 This config.py contains configuration data.
 """
+import os
 
 class ConfService:
-    secret_key = "secret_here"
+    secret_key = os.getenv("SECRET_KEY") or "secret_here"
+    service_url = os.getenv("SERVICE_URL") or "rp_web_page_here"
 
-    service_url = "rp_web_page_here"
-    AS="qtsp_as_url_here"
-    RS="qtsp_rs_url_here"
-    SCA="rp_internal_sca_url_here"
+    as_url="qtsp_as_url_here"
+    rs_url="qtsp_rs_url_here"
+    sca_url="rp_internal_sca_url_here"
     
-    oauth_client_id = "client_id_here"
-    oauth_client_secret = "client_secret_here"
-    oauth_redirect_uri = service_url+"/oauth2/callback"
+    oauth2_client_id = os.getenv("OAUTH2_CLIENT_ID") or "client_id_here"
+    oauth2_client_secret = os.getenv("OAUTH2_CLIENT_SECRET") or "client_secret_here"
+    oauth2_redirect_uri = service_url+"/oauth2/callback"
 
-    LOAD_FOLDER = 'app/docs' 
+    LOAD_FOLDER = 'docs'

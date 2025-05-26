@@ -78,7 +78,7 @@ def create_app():
 
     # Register routes
     from . import (routes)
-    app.register_blueprint(routes.sca)
+    app.register_blueprint(routes.rp)
 
     # Configure session    
     app.config["SESSION_TYPE"] = "filesystem"
@@ -90,5 +90,5 @@ def create_app():
     Session(app)
 
     # Configure CORS
-    CORS(app, supports_credentials=True, resources={r"/tester/*": {"origins": ConfService.AS}})
+    CORS(app, supports_credentials=True, resources={r"/tester/*": {"origins": ConfService.as_url}})
     return app
