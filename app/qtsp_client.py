@@ -61,11 +61,11 @@ def oauth2_authorize_service_request():
 def oauth2_authorize_credential_request(code_challenge, code_challenge_method, num_signatures, hashes, hash_algorithm_oid, credential_id):
     url = cfgserv.as_url+"/oauth2/authorize?response_type=code&client_id="+cfgserv.oauth2_client_id+"&redirect_uri=" + cfgserv.oauth2_redirect_uri+"&scope=credential&code_challenge="+code_challenge+"&code_challenge_method="+code_challenge_method+"&state=12345678&numSignatures=1&hashes="+hashes+"&hashAlgorithmOID="+hash_algorithm_oid+"&credentialID="+credential_id
     response = requests.get(url=url, allow_redirects=False)
-    print(response.text)
+    app.logger.info("Response from oauth2/authorize request: ("+ str(response.status_code)+") "+response.text)
     return response
 
 def oauth2_token_request(code, code_verifier):
-    url =  cfgserv.AS+"/oauth2/token"
+    url =  cfgserv.as_url+"/oauth2/token"
         
     value_to_encode = f"{cfgserv.oauth2_client_id}:{cfgserv.oauth2_client_secret}"
     encoded_value = base64.b64encode(value_to_encode.encode()).decode('utf-8')

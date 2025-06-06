@@ -271,7 +271,7 @@ def signed_document_download():
         
     ext = None
     container = session.get("container")
-    print(container)
+    app.logger.info("Identifying mime_type for container type: "+ container)
     if container == "ASiC-S":
         mime_type = "application/vnd.etsi.asic-s+zip"
         ext = ".zip"
@@ -320,7 +320,6 @@ def get_base64_document(filename):
 
 def add_suffix_to_filename(filename, suffix="_signed", new_ext = None):
     name, ext = os.path.splitext(filename)
-    print(ext)
     
     if new_ext is not None:
         return f"{name}{suffix}{new_ext}"
