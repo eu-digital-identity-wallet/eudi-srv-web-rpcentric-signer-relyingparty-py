@@ -64,7 +64,7 @@ def login():
         if user is not None:
             app.logger.info('Login successful.')
             login_user(user)
-            return redirect(url_for('rp.account'))
+            return redirect(url_for('RP.account'))
         else:
             app.logger.info('Login failed.')
             flash('Login failed! Please check your username and password.')
@@ -77,7 +77,7 @@ def logout():
     app.logger.info('Logout request received.')
     logout_user()
     app.logger.info('Logout successful.')
-    return redirect(url_for('rp.login'))
+    return redirect(url_for('RP.login'))
 
 @rp.route('/tester/account', methods=['GET', 'POST'])
 @login_required
@@ -158,11 +158,11 @@ def oauth_login_code():
     if scope == "service":
         remove_session_values(variable_name="code_verifier")
         update_session_values(variable_name="service_access_token", variable_value=access_token)
-        return redirect(url_for("rp.credentials_list"))
+        return redirect(url_for("RP.credentials_list"))
     elif scope == "credential":
         remove_session_values(variable_name="code_verifier")
         update_session_values(variable_name="credential_access_token", variable_value=access_token)
-        return redirect(url_for("rp.sign_document"))
+        return redirect(url_for("RP.sign_document"))
     
     app.logger.error("Unexpected scope received: %s", scope)
     return "Invalid scope received.", 400

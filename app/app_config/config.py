@@ -21,15 +21,12 @@ This config.py contains configuration data.
 import os
 
 class ConfService:
-    secret_key = os.getenv("SECRET_KEY") or "secret_here"
-    service_url = os.getenv("SERVICE_URL") or "rp_web_page_here"
-
-    as_url="qtsp_as_url_here"
-    rs_url="qtsp_rs_url_here"
-    sca_url="rp_internal_sca_url_here"
-    
-    oauth2_client_id = os.getenv("OAUTH2_CLIENT_ID") or "client_id_here"
-    oauth2_client_secret = os.getenv("OAUTH2_CLIENT_SECRET") or "client_secret_here"
+    secret_key = os.getenv("SECRET_KEY")
+    service_url = os.getenv("SERVICE_URL")
+    as_url=os.getenv("AS_URL")
+    rs_url=os.getenv("RS_URL")
+    sca_url=os.getenv("SCA_URL")
+    oauth2_client_id = os.getenv("OAUTH2_CLIENT_ID")
+    oauth2_client_secret = os.getenv("OAUTH2_CLIENT_SECRET")
     oauth2_redirect_uri = service_url+"/oauth2/callback"
-
     LOAD_FOLDER = 'docs'

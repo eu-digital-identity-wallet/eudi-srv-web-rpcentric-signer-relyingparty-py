@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 
 .idea
-app/app_config/config.py
 
 # C extensions
 *.so

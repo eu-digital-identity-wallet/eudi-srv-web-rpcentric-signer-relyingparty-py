@@ -21,7 +21,7 @@ Application Initialization File:
 Handles application setup, configuration, and exception handling.
 """
 
-import os, sys, logging
+import os, sys
 from logging.config import dictConfig
 
 from flask import Flask, render_template
@@ -83,7 +83,7 @@ def create_app():
     # Initialize LoginManager
     from flask_login import LoginManager
     login_manager = LoginManager()
-    login_manager.login_view = 'SCA.login'
+    login_manager.login_view = 'RP.login'
     login_manager.init_app(app)
 
     @login_manager.user_loader
