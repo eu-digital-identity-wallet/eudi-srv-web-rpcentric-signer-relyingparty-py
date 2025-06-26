@@ -16,12 +16,12 @@ import requests
 from app_config.config import ConfService as cfgserv
 import json
 from flask import (
-    current_app as app, url_for
+    current_app as app
 )
 
-def signature_flow(access_token, credentialId, filename, document, signature_format, conformance_level, signed_envelope_property, container, hash_algorithm_oid):
-    app.logger.info("Requesting signature to the SCA: "+cfgserv.SCA)
-    url = cfgserv.SCA+"/signatures/doc"
+def signature_flow(access_token, credential_id, filename, document, signature_format, conformance_level, signed_envelope_property, container, hash_algorithm_oid):
+    app.logger.info("Requesting signature to the SCA: "+cfgserv.sca_url)
+    url = cfgserv.sca_url+"/signatures/doc"
     
     redirect_url = cfgserv.service_url+"/signed_document_download"
     
@@ -30,9 +30,8 @@ def signature_flow(access_token, credentialId, filename, document, signature_for
         'Content-Type': 'application/json',
         'Authorization': authorization_header
     }
-
     payload = json.dumps({
-        "credentialID": credentialId,
+        "credentialID": credential_id,
         "documents": [
             {
                 "document": document,
@@ -44,17 +43,17 @@ def signature_flow(access_token, credentialId, filename, document, signature_for
             }
         ],
         "hashAlgorithmOID": hash_algorithm_oid,
-        "resourceServerUrl": cfgserv.RS,
-        "authorizationServerUrl": cfgserv.AS,
+        "resourceServerUrl": cfgserv.rs_url,
+        "authorizationServerUrl": cfgserv.as_url,
         "redirectUri": redirect_url
     })
-    
-    app.logger.info("Requesting signature with credentialId "+credentialId)
+
+    app.logger.info("Making request with: Payload: "+ payload)
 
     response = requests.post(url, headers=headers, data=payload, allow_redirects=False)
     app.logger.info("Made Signature Request to SCA. Status Code: "+str(response.status_code))
    
-    if(response.status_code == 302): # redirects to the QTSP OID4VP Authentication Page
+    if response.status_code == 302: # redirects to the QTSP OID4VP Authentication Page
         app.logger.info("Successfully made request to sign the document. Redirecting to the OID4VP Authentication Page to authorize signature.")
         location = response.headers.get("Location")
         app.logger.info("Redirecting to: "+location)

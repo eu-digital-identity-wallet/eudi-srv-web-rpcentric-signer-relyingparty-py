@@ -21,7 +21,9 @@ Application Initialization File:
 Handles application setup, configuration, and exception handling.
 """
 
-import os, sys, logging
+import os, sys
+from logging.config import dictConfig
+
 from flask import Flask, render_template
 from flask_session import Session
 from flask_cors import CORS
@@ -30,6 +32,38 @@ from app.app_config.config import ConfService
 # Extend system path to include the current directory
 sys.path.append(os.path.dirname(__file__))
 
+os.makedirs("logs", exist_ok=True)
+ENV = os.getenv("ENV_TYPE", "test")
+dictConfig(
+    {
+        "version": 1,
+        "formatters": {
+            "default": {
+                "format": "%(asctime)s %(levelname)s %(module)s.%(funcName)s:%(lineno)d %(name)s: - %(message)s",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+            }
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "stream": "ext://sys.stdout",
+                "formatter": "default",
+            },
+            "file": {
+                "class": "logging.handlers.TimedRotatingFileHandler",
+                "filename": "logs/rpcentric_rp_logs.log",
+                "when": "D",
+                "interval": 7, # a new file for every week
+                "backupCount": 5, # the number of files that will be retained on the disk
+                "formatter": "default",
+            },
+        },
+        "root": {
+            "level": "DEBUG" if ENV != "dev" else "INFO",
+            "handlers": ["console"] if ENV != "dev" else ["file"],
+        },
+    }
+)
 
 def page_not_found(e):
     return (
@@ -45,13 +79,11 @@ def create_app():
         
     app = Flask(__name__, instance_relative_config=True)
     app.config['SECRET_KEY'] = ConfService.secret_key
-    
-    app.logger.setLevel(logging.INFO)
-    
+
     # Initialize LoginManager
     from flask_login import LoginManager
     login_manager = LoginManager()
-    login_manager.login_view = 'SCA.login'
+    login_manager.login_view = 'RP.login'
     login_manager.init_app(app)
 
     @login_manager.user_loader
@@ -78,7 +110,7 @@ def create_app():
 
     # Register routes
     from . import (routes)
-    app.register_blueprint(routes.sca)
+    app.register_blueprint(routes.rp)
 
     # Configure session    
     app.config["SESSION_TYPE"] = "filesystem"
@@ -90,5 +122,5 @@ def create_app():
     Session(app)
 
     # Configure CORS
-    CORS(app, supports_credentials=True, resources={r"/tester/*": {"origins": ConfService.AS}})
+    CORS(app, supports_credentials=True, resources={r"/tester/*": {"origins": ConfService.as_url}})
     return app

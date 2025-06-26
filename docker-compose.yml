@@ -1,0 +1,10 @@
+services:
+  rpcentric_relyingparty:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rpcentric_relyingparty
+    env_file:
+      - .env
+    ports:
+      - "5000:5000"
