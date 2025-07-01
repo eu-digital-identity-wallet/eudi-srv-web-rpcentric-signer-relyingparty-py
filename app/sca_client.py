@@ -15,90 +15,27 @@
 import requests
 from app_config.config import ConfService as cfgserv
 import json
+from flask import (
+    current_app as app
+)
 
-# Function that makes a request to the endpoint /calculate_hash do SCA
-# It return a JSON Object with the hash value and the date
-def calculate_hash_request(document, signature_format, conformance_level, signed_envelope_property, container, end_entity_certificate,
-                           certificate_chain, hash_algorithm_oid):
-    url = cfgserv.SCA+"/signatures/calculate_hash"
+def signature_flow(access_token, credential_id, filename, document, signature_format, conformance_level, signed_envelope_property, container, hash_algorithm_oid):
+    app.logger.info("Requesting signature to the SCA: "+cfgserv.sca_url)
+    url = cfgserv.sca_url+"/signatures/doc"
     
-    headers = {
-        'Content-Type': 'application/json'
-    }
+    redirect_url = cfgserv.service_url+"/signed_document_download"
     
-    payload = json.dumps({
-        "documents": [
-            {
-                "document": document,
-                "signature_format": signature_format,
-                "conformance_level": conformance_level,
-                "signed_envelope_property": signed_envelope_property,
-                "container": container
-            }
-        ],
-        "endEntityCertificate": end_entity_certificate,
-        "certificateChain": [
-            certificate_chain
-        ],
-        "hashAlgorithmOID": hash_algorithm_oid
-    })
-
-    print(payload)
-
-    response = requests.post(url , headers=headers, data=payload)
-    print(response.text)
-    
-    return response.json()
-     
-def obtain_signed_document(document, signature_format, conformance_level, signed_envelope_property, container, end_entity_certificate,
-                           certificate_chain, hash_algorithm_oid, signatures, date):
-    url = cfgserv.SCA+"/signatures/obtain_signed_doc"
-    
-    headers = {
-        'Content-Type': 'application/json'
-    }
-
-    payload = json.dumps({
-        "documents": [
-            {
-                "document": document,
-                "signature_format": signature_format,
-                "conformance_level": conformance_level,
-                "signed_envelope_property": signed_envelope_property,
-                "container": container
-            }
-        ],
-        "hashAlgorithmOID": hash_algorithm_oid,
-        "returnValidationInfo": False,
-        "endEntityCertificate": end_entity_certificate,
-        "certificateChain": [
-            certificate_chain
-        ],
-        "signatures": signatures,
-        "date": date
-    })
-
-    print(payload)
-
-    response = requests.post(url, headers=headers, data=payload)
-
-    print(response.text)
-
-    return response
-
-def signature_flow(authorization_header, credentialId, document, signature_format, conformance_level, signed_envelope_property, container, hash_algorithm_oid):
-    url = cfgserv.SCA+"/signatures/doc"
-    
+    authorization_header = "Bearer " + access_token
     headers = {
         'Content-Type': 'application/json',
         'Authorization': authorization_header
     }
-
     payload = json.dumps({
-        "credentialID": credentialId,
+        "credentialID": credential_id,
         "documents": [
             {
                 "document": document,
+                "document_name": filename,
                 "signature_format": signature_format,
                 "conformance_level": conformance_level,
                 "signed_envelope_property": signed_envelope_property,
@@ -106,11 +43,23 @@ def signature_flow(authorization_header, credentialId, document, signature_forma
             }
         ],
         "hashAlgorithmOID": hash_algorithm_oid,
-        "resourceServerUrl": cfgserv.RS,
-        "authorizationServerUrl": cfgserv.AS,
-        "redirectUri": cfgserv.service_url+"/signed_document_download"
+        "resourceServerUrl": cfgserv.rs_url,
+        "authorizationServerUrl": cfgserv.as_url,
+        "redirectUri": redirect_url
     })
 
+    app.logger.info("Making request with: Payload: "+ payload)
+
     response = requests.post(url, headers=headers, data=payload, allow_redirects=False)
-    print(response)
-    return response
+    app.logger.info("Made Signature Request to SCA. Status Code: "+str(response.status_code))
+   
+    if response.status_code == 302: # redirects to the QTSP OID4VP Authentication Page
+        app.logger.info("Successfully made request to sign the document. Redirecting to the OID4VP Authentication Page to authorize signature.")
+        location = response.headers.get("Location")
+        app.logger.info("Redirecting to: "+location)
+        return location
+    else:
+        app.logger.error("It was impossible to sign the document")
+        message = response.json()["message"]
+        app.logger.error("Error message: "+message)
+        raise ValueError("It was impossible to sign the document: "+message) 

@@ -26,15 +26,6 @@
       media="all"
       type="text/css"
     />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='fontawesome-free-5.15.4-web/css/fontawesome.min.css') }}"
-      type="text/css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
-    />
     <script
       type="text/javascript"
       id="jqueryId"
@@ -102,18 +93,18 @@
                     <li class="nav-item">
                       <a
                         class="nav-link btn"
-                        href="{{ url_for('SCA.account') }}"
+                        href="{{ url_for('RP.account') }}"
                         >Home</a
                       >
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link btn" href="{{ url_for('SCA.logout') }}"
+                      <a class="nav-link btn" href="{{ url_for('RP.logout') }}"
                         >Logout</a
                       >
                     </li>
                     {% else %}
                     <li class="nav-item">
-                      <a class="nav-link btn" href="{{ url_for('SCA.login') }}"
+                      <a class="nav-link btn" href="{{ url_for('RP.login') }}"
                         >Login</a
                       >
                     </li>
@@ -143,7 +134,7 @@
                   src="{{ url_for('static', filename='images/logo.svg') }}"
                   alt="Image 1"
               /></a>
-              <small class="mt-2">2024.04.2-Demo (release 0.3.0)</small>
+              <small class="mt-2">2025.01.14-Demo (release 0.1.0)</small>
             </div>
           </div>
           <div class="col-md-3 footer-column-box">

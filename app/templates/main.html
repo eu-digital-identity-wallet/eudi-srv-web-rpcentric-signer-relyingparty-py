@@ -15,7 +15,7 @@
           environment of the EUDI Wallet rQES.
         </p>
         <div class="genericErrors" id="genericErrorsDesc"></div>
-        <form action="{{ redirect_url }}/login" method="GET">
+        <form action="{{ url_for('RP.login') }}" method="GET">
           <!-- Submit button -->
           <button class="btn custom-btn" type="submit">Login</button>
         </form>

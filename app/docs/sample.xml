@@ -1,2 +1,2 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<message>XML Sample</message>
+<?xml version="1.0"?>
+<test id="test-xml">Hello World !</test>
