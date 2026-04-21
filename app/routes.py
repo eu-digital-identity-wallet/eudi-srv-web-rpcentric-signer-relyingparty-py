@@ -303,11 +303,11 @@ def remove_session_values(variable_name):
 
 def get_base64_document(filename):
     # Construct the path to the file in the "docs" folder
-    file_path = os.path.join(settings.SAMPLE_DOCUMENTS_FOLDER, filename)
+    file_path = os.path.join(app.root_path, settings.SAMPLE_DOCUMENTS_FOLDER, filename)
 
     # Check if the file exists before trying to read it
     if not os.path.isfile(file_path):
-        return f"File '{filename}' not found in the docs directory", 404
+        return f"File '{filename}' not found in the {settings.SAMPLE_DOCUMENTS_FOLDER} directory", 404
     
     # Read the content of the file to encode it in base64
     base64_document = None
