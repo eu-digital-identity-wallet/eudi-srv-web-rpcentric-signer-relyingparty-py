@@ -1,0 +1,361 @@
+* {
+  font-family: "Helvetica", sans-serif;
+}
+
+h1 {
+  font-weight: bold;
+  color: #0043b3;
+}
+h2 {
+  font-weight: 700;
+}
+h3 {
+  font-weight: 600;
+  font-size: 20px;
+}
+
+.main {
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-width: 350px;
+  overflow-wrap: break-word;
+}
+.main-container {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  max-width: 100%;
+  padding: 2% 15%;
+  gap: 30px;
+}
+@media (max-width: 768px) {
+  .main-container {
+    padding: 5% 10%;
+  }
+}
+
+.page-centered {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.blue-box {
+  background-color: #DCE5F2;
+  border-radius: 3px;
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12);
+  padding: 5% 10%;
+  width: 100%;
+  min-height: calc(100% - 40px);
+}
+
+/* -- Buttons -- */
+.common-btn {
+  align-items: center;
+  border-radius: 5px;
+  box-sizing: border-box;
+  display: inline-flex;
+  justify-content: center;
+  padding: 4px 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+  width: fit-content;
+}
+
+.primary-btn {
+  background: #0048D2;
+  color: white;
+  padding: 8px 16px;
+  margin-bottom: 10px;
+}
+.primary-btn:hover {
+  background-color: white;
+  border-color: #0048D2;
+  color: #0048D2;
+}
+
+.secondary-btn {
+  background: white;
+  border: 1px solid;
+  border-color: #0048D2;
+  color: #0048D2;
+}
+.secondary-btn:hover {
+  background: #0048D2;
+  color: white;
+}
+
+.download-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  align-items: auto;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.button-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between; /* Space out the buttons */
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0px;
+}
+
+/* -- Header -- */
+#header-container {
+  padding-left: 15%;
+  padding-right: 15%;
+}
+
+.navbar-nav {
+  width: fit-content;
+  align-items: flex-end !important;
+}
+
+.nav-item {
+  width: fit-content;
+  padding-left: 5px;
+  padding-bottom: 5px;
+}
+
+/*Footer CSS*/
+footer {
+  background-color: rgba(254, 253, 245, 0);
+  color: rgb(78, 81, 105);
+  padding: 20px;
+  margin-top: 20px;
+  border-top: 1px solid #b3b3b3;
+}
+
+.footer-row {
+  border-top-color: rgb(78, 81, 105);
+  box-sizing: border-box;
+}
+
+.footer-column-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.footer-column {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-column a {
+  text-decoration: none;
+  color: rgb(78, 81, 105);
+  margin: 5px;
+}
+
+.footer-column a:hover {
+  text-decoration: underline;
+  color: rgb(78, 81, 105);
+}
+
+.footer-column img {
+  max-width: 100%;
+  height: auto;
+  margin: 5px;
+}
+
+.footer-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/*Landing Page*/
+.title-container {
+  margin-top: 20px;
+}
+
+.all-services-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.single-service-box {
+  border: 3px solid #DCE5F2;
+  flex: 1 1 calc(50% - 8px);
+  max-width: calc(50% - 8px);
+  border-radius: 10px;
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12);
+  padding: 10px 20px;
+  width: 40%;
+}
+.single-service-box .badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  background: #DCE5F2;
+  color: #0043b3;
+}
+.single-service-box .title {
+  font-weight: 600;
+  margin-bottom:8px;
+  color: #0043b3;
+}
+.single-service-box a {
+  padding: 0px 10px;
+  text-decoration: none;
+  color: rgba(33, 37, 41);
+}
+@media (max-width: 768px) {
+  .single-service-box {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+}
+
+/*Login Page*/
+
+.link{
+  color: #0048D2;
+  text-decoration: underline;
+}
+
+.error-message {
+  color: red;
+  margin-bottom: 15px;
+}
+
+.popup {
+  display: none;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  border-radius: 10px;
+  width: 300px;
+}
+
+.popup table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.popup table th,
+.popup table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: left;
+}
+
+.popup table th {
+  background-color: #f4f4f4;
+}
+
+.popup-close {
+  text-align: right;
+}
+
+.popup-close button {
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.popup-close button:hover {
+  background-color: #ff0000;
+}
+
+.login-box {
+  background-color: #fff;
+  padding: 40px;
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12);
+  border-radius: 5px;
+}
+.login-box-field{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  padding-bottom: 10px;
+}
+.login-box-field label {
+  font-size: 13px;
+  font-weight: 600;
+}
+.login-box-field input{
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  outline: none;
+  width: 100%;
+}
+
+/*Display Documents*/
+.preview {
+  border: 1px solid #0048d2;
+  margin: 10px 0px;
+  height: fit-content;
+  overflow: auto;
+  background-color: #f9f9f9;
+  width: 100%;
+}
+
+.certificate-options-div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  text-align: left;
+  align-items: center;
+  margin: 10px 0px;
+  justify-content: center;
+}
+
+.certificate-options {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  cursor: pointer;
+  background: #0048D2;
+  border: 1px solid #0048D2;
+  color: white;
+  border-radius: 5px;
+}
+
+.document-options-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.document-options-box form {
+  width: 100%;
+}
+
+.document-options-form-div {
+  text-align: left;
+  margin: 10px 0px;
+}
+
+.document-options-form-div .legend {
+  margin : 0px;
+  font-weight: bold;
+}

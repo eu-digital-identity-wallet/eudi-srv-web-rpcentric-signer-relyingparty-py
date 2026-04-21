@@ -70,32 +70,40 @@ python -m pip install --upgrade pip
 Install Flask and other dependencies in virtual environment
 
 ```shell
-pip install -r app/requirements.txt
+pip install -r requirements.txt
 ```
 
 #### Step 6: Configure the Application
 
-Update the **config.py** file located in the app_config directory or, alternatively, create an **.env** file.
+Update the **config.py** file located in the `core` directory or, alternatively, create an **.env** file.
 In either case, configure the following variables:
 
-- **secret_key**: define a secure and random key
-- **service_url**: the base URL of the service
-- **as_url**: the URL of the QTSP Authorization Server (AS)
-- **rs_url**: the URL of the QTSP Resource Server (RS)
-- **sca_url**: the URL of the RP internal SCA Server
-- **oauth2_client_id**: the client ID of the RP Web Page in the QTSP AS
-- **oauth2_client_secret**: the client secret of the RP Web Page in the QTSP AS
+- **ENV**: environment type (e.g., development, preproduction)
+- **SECRET_KEY**: a secure, randomly generated key
+- **SAMPLE_DOCUMENTS_FOLDER**: path to the folder containing documents to be signed
+- **LOGS_FOLDER**: path to the logs directory
+- **SERVICE_URL**: base URL of the service
+- **AS_URL**: URL of the QTSP Authorization Server (AS)
+- **RS_URL**: URL of the QTSP Resource Server (RS)
+- **SCA_URL**: URL of the RP internal SCA Server
+- **OAUTH2_CLIENT_ID**: client ID of the RP Web Page registered in the QTSP AS
+- **OAUTH2_CLIENT_SECRET**: client secret of the RP Web Page registered in the QTSP AS
+- **OAUTH2_CODE_CHALLENGE_METHOD**: PKCE code challenge method (e.g., S256)
 
 You may alternatively define all variables in a *.env* file:
 ```
-FLASK_RUN_PORT=
+FLASK_RUN_PORT=5000
+ENV=dev
 SECRET_KEY=
-SERVICE_URL=
+SAMPLE_DOCUMENTS_FOLDER=docs
+LOGS_FOLDER=logs
+SERVICE_URL=http://127.0.0.1:5000/tester
 AS_URL=
 RS_URL=
 SCA_URL=
 OAUTH2_CLIENT_ID=
 OAUTH2_CLIENT_SECRET=
+OAUTH2_CODE_CHALLENGE_METHOD=
 ```
 
 #### Step 7: Run the Application
