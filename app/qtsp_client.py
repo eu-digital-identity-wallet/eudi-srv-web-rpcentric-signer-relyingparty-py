@@ -11,159 +11,230 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Tuple
 
 import requests, secrets, hashlib
-from app_config.config import ConfService as cfgserv
-import json
+
+from app.schemas.csc import *
+from app.schemas.oauth2 import *
+from app.core.config import settings
 import base64
-from flask import (
-    current_app as app
-)
+from flask import current_app as app, session
 
-# Request to Authorization Server
 
-# Function that executes the /oauth2/authorize request
-# It can either return a 302 response (to a authentication endpoint or the redirect uri endpoint)
-# It can return error
-def oauth2_authorize_service_request():
-    app.logger.info("Requesting authorization to the AS :"+cfgserv.as_url)
+oauth2_authorize_url = settings.AS_URL + "/oauth2/authorize"
+oauth2_token_url = settings.AS_URL + "/oauth2/token"
+credential_list_endpoint = settings.RS_URL + "/csc/v2/credentials/list"
+credential_info_endpoint = settings.RS_URL + "/csc/v2/credentials/info"
+credential_create_endpoint = settings.RS_URL + "/csc/v2/credentials/create"
+credential_delete_endpoint = settings.RS_URL + "/csc/v2/credentials/delete"
+
+def _get_requests(scope: str, code_challenge: str, authentication: str = None, credential_id: str = None):
+    if scope == "service":
+        request = OAuth2AuthorizeRequest(
+            response_type="code",
+            client_id=settings.OAUTH2_CLIENT_ID,
+            redirect_uri=settings.oauth2_redirect_uri,
+            scope="service",
+            code_challenge=code_challenge,
+            code_challenge_method=settings.OAUTH2_CODE_CHALLENGE_METHOD,
+            state=session.sid
+        )
+        return request
+    elif scope == "credential-creation":
+        authorization_details = [{"type": "https://cloudsignatureconsortium.org/2025/credential-creation",
+                                  "credentialCreationRequest": {"certificatePolicy": "0.4.0.194112.1.2"}}]
+        request = OAuth2AuthorizeRequest(
+            response_type="code",
+            client_id=settings.OAUTH2_CLIENT_ID,
+            redirect_uri=settings.oauth2_redirect_uri,
+            code_challenge=code_challenge,
+            code_challenge_method=settings.OAUTH2_CODE_CHALLENGE_METHOD,
+            state=session.sid,
+            authorization_details=str(authorization_details)
+        )
+        return request
+    elif scope == "credential-deletion":
+        authorization_details = [{"type": "https://cloudsignatureconsortium.org/2025/credential-deletion", "credentialID": credential_id}]
+        request = OAuth2AuthorizeRequest(
+            response_type="code",
+            client_id=settings.OAUTH2_CLIENT_ID,
+            redirect_uri=settings.oauth2_redirect_uri,
+            code_challenge=code_challenge,
+            code_challenge_method=settings.OAUTH2_CODE_CHALLENGE_METHOD,
+            state=session.sid,
+            authorization_details=str(authorization_details)
+        )
+        return request
+    else:
+        raise ValueError(f"Unknown scope {scope}")
+
+def _make_oauth2_authorize_request(scope: str, credential_id: str = None) -> Tuple[str, str]:
+    app.logger.info(f"Requesting authorization of scope {scope} to {oauth2_authorize_url}")
     
     code_verifier = secrets.token_urlsafe(32)   
-    code_challenge_method = "S256"
     code_challenge_bytes = hashlib.sha256(code_verifier.encode()).digest()
     code_challenge = base64.urlsafe_b64encode(code_challenge_bytes).rstrip(b'=').decode()
-        
-    url = cfgserv.as_url+"/oauth2/authorize"
-    params = {
-        "response_type":"code",
-        "client_id": cfgserv.oauth2_client_id,
-        "redirect_uri": cfgserv.oauth2_redirect_uri,
-        "scope":"service",
-        "code_challenge": code_challenge,
-        "code_challenge_method": code_challenge_method,
-        "state": "12345678"
-    }
-    response = requests.get(url = url, params = params, allow_redirects = False)
+
+    request = _get_requests(scope=scope, code_challenge=code_challenge, credential_id=credential_id)
+    response = requests.get(url = oauth2_authorize_url, params = request.to_params(), allow_redirects = False)
     app.logger.info("Received response with status code: "+str(response.status_code))
     
     if response.status_code == 400:
-        message = response.json()["message"]
-        app.logger.error(message)
+        message = response.json().get("message")
+        app.logger.error("It was impossible to retrieve the authentication link: "+message)
         raise ValueError("It was impossible to retrieve the authentication link: "+message)
-    elif response.status_code == 200:
-        app.logger.info("Successful Response: "+response.text)
-        return code_verifier, response
     elif response.status_code == 302:
-        location = response.headers["Location"]
+        location = response.headers.get("Location")
+        app.logger.info("Retrieved authentication endpoint: " + location)
         return code_verifier, location
-    return response
+    else:
+        app.logger.error("Unexpected status code in oauth2/authorize response: " + str(response.status_code))
+        raise ValueError("Unexpected status code in oauth2/authorize response: " + str(response.status_code))
 
-def oauth2_authorize_credential_request(code_challenge, code_challenge_method, num_signatures, hashes, hash_algorithm_oid, credential_id):
-    url = cfgserv.as_url+"/oauth2/authorize?response_type=code&client_id="+cfgserv.oauth2_client_id+"&redirect_uri=" + cfgserv.oauth2_redirect_uri+"&scope=credential&code_challenge="+code_challenge+"&code_challenge_method="+code_challenge_method+"&state=12345678&numSignatures=1&hashes="+hashes+"&hashAlgorithmOID="+hash_algorithm_oid+"&credentialID="+credential_id
-    response = requests.get(url=url, allow_redirects=False)
-    app.logger.info("Response from oauth2/authorize request: ("+ str(response.status_code)+") "+response.text)
-    return response
 
-def oauth2_token_request(code, code_verifier):
-    url =  cfgserv.as_url+"/oauth2/token"
-        
-    value_to_encode = f"{cfgserv.oauth2_client_id}:{cfgserv.oauth2_client_secret}"
+def oauth2_authorize_service_request() -> Tuple[str, str]:
+    return _make_oauth2_authorize_request(scope = "service")
+
+def oauth2_authorize_credential_create_request() -> Tuple[str, str]:
+    return _make_oauth2_authorize_request(scope = "credential-creation")
+
+def oauth2_authorize_credential_delete_request(credential_id:str) -> Tuple[str, str]:
+    return _make_oauth2_authorize_request(scope = "credential-deletion", credential_id=credential_id)
+
+def oauth2_token_request(code: str, code_verifier: str) -> OAuth2TokenResponse:
+    app.logger.info("Requesting token to:" + oauth2_token_url)
+    value_to_encode = f"{settings.OAUTH2_CLIENT_ID}:{settings.OAUTH2_CLIENT_SECRET}"
     encoded_value = base64.b64encode(value_to_encode.encode()).decode('utf-8')
     authorization_basic = f"Basic {encoded_value}"
     headers= {
         'Authorization': authorization_basic
     }
+
+    request = OAuth2TokenRequest(
+        grant_type="authorization_code",
+        code=code,
+        client_id=settings.OAUTH2_CLIENT_ID,
+        redirect_uri=settings.oauth2_redirect_uri,
+        code_verifier=code_verifier,
+    )
     
-    params = {
-        "grant_type":"authorization_code",
-        "code": code,
-        "client_id": cfgserv.oauth2_client_id,
-        "redirect_uri": cfgserv.oauth2_redirect_uri,
-        "code_verifier": code_verifier
-    }
-    
-    app.logger.info("Requesting token with params: "+str(params))
-    response = requests.post(url = url, params = params, headers = headers, allow_redirects = False)
-    app.logger.info("Response: "+str(response))
-    
+    response = requests.post(url = oauth2_token_url, params = request.to_params(), headers = headers, allow_redirects = False)
+    app.logger.info("Received response with status code: "+str(response.status_code))
+
     if response.status_code == 400:
         app.logger.error("It wasn't possible to complete the token request.")
-        error = response.json()["error"]
-        error_description = response.json()["error_description"]
+        error = response.json().get("error")
+        error_description = response.json().get("error_description")
         app.logger.error("Error in token request: "+error+" - "+error_description)
         raise ValueError("Error while trying to retrieve access: "+error+" - "+error_description)
     
     elif response.status_code == 200:
-        app.logger.info("Successful oauth2 token request.")
-        response_json = response.json()
-        access_token = response_json["access_token"]
-        scope = response_json["scope"]
-        app.logger.info("Received access token "+access_token+" of scope "+scope)
-        return scope, access_token
+        app.logger.info("Successful oauth2 token response status code: " + str(response.status_code))
+        return OAuth2TokenResponse.from_json(response.json())
+    else:
+        raise ValueError("Unexpected status code (" + str(response.status_code) + ") when trying to retrieve access token.")
 
 # Request to Resource Server
-def csc_v2_credentials_list(access_token):
-    app.logger.info("Requesting credentials list from the QTSP RS: "+cfgserv.rs_url)
-    
-    url =  cfgserv.rs_url+"/csc/v2/credentials/list"
-    
-    authorization_header = "Bearer "+access_token
-    headers = {
-        'Content-Type': 'application/json', 
-        'Authorization': authorization_header
+def _get_headers(access_token: str):
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': "Bearer " + access_token
     }
-    
-    payload = json.dumps({
-        "credentialInfo": "true",
-        "certificates": "single",
-        "certInfo": "true"
-    })
-    
-    response = requests.post(url = url, data=payload, headers = headers)     
-    
-    if response.status_code == 400:
-        app.logger.error("Error retrieving credentials list from QTSP RS.")
-        message = response.json()["message"]
-        app.logger.error(message)
-        raise ValueError("It was impossible to retrieve the credentials list from the QTSP: "+message)
-    
-    elif response.status_code == 200:
-        app.logger.info("Retrieved credentials list from QTSP RS.")
-        list_credentials_ids = response.json()["credentialIDs"]
-        app.logger.info("Retrieved list of credentials ids.")
-        return list_credentials_ids
 
-def csc_v2_credentials_info(access_token, credentialId):
-    app.logger.info("Requesting credential info from the QTSP RS: "+cfgserv.rs_url)
-    url =  cfgserv.rs_url+"/csc/v2/credentials/info"
+def csc_v2_credentials_list(access_token: str) -> CredentialsListResponse:
+    app.logger.info("Requesting credentials list to: " + credential_list_endpoint)
+
+    request = CredentialsListRequest(
+        credentialInfo=True,
+        certificates="single",
+        certInfo=True
+    )
     
-    authorization_header = "Bearer "+access_token
-    headers = {
-        'Content-Type': 'application/json', 
-        'Authorization': authorization_header
-    }
-    
-    payload = json.dumps({
-        "credentialID": credentialId,
-        "credentialInfo": "true",
-        "certificates": "chain",
-        "certInfo": "true"
-    })
-    
-    app.logger.info("Requesting credential info with payload: "+payload)
-    response = requests.post(url = url, data=payload, headers = headers)
+    headers = _get_headers(access_token)
+    response = requests.post(url = credential_list_endpoint, data=request.to_json(), headers = headers)
     
     if response.status_code == 400:
-        message = response.json()["message"]
+        message = response.json().get("message")
         app.logger.error(message)
-        raise ValueError("It was impossible to retrieve the credential info from QTSP: "+message)
+        app.logger.error("It was impossible to retrieve the credentials list. " + message)
+        raise ValueError("It was impossible to retrieve the credentials list: " + message)
+    elif response.status_code == 200:
+        app.logger.info("Retrieved credentials list.")
+        return CredentialsListResponse.from_json(response.json())
+    else:
+        app.logger.error("Unexpected status code in credentials/list response: " + str(response.status_code))
+        raise ValueError("It was impossible to retrieve the credentials list.")
+
+def csc_v2_credentials_info(access_token: str, credentialId: str) -> Tuple[list[str], list[str]]:
+    app.logger.info("Requesting credential info to: " + credential_info_endpoint)
+
+    headers = _get_headers(access_token)
+
+    request = CredentialsInfoRequest(
+        credentialID=credentialId,
+        certificates="chain",
+        certInfo=True
+    )
+    
+    app.logger.info("Requesting credential info with payload: "+request.to_json())
+    response = requests.post(url = credential_info_endpoint, data=request.to_json(), headers = headers)
+    
+    if response.status_code == 400:
+        message = response.json().get("message")
+        app.logger.error("It was impossible to retrieve the credential info: "+message)
+        raise ValueError("It was impossible to retrieve the credential info: "+message)
     
     elif response.status_code == 200:
-        credential_info_json = response.json()
-        certificates = credential_info_json["cert"]["certificates"]
-        key_info = credential_info_json["key"]
-        key_algos = key_info["algo"]
-        app.logger.info("Retrieved credential info of credential: "+credentialId)
-        return certificates, key_algos
+        info_response = CredentialsInfoResponse.from_json(response.json())
+        app.logger.info("Retrieved credential info.")
+        return info_response.cert.certificates, info_response.key.algo
         
-    return response
+    else:
+        app.logger.error("Unexpected status code in credentials/info response: " + str(response.status_code))
+        raise ValueError("It was impossible to retrieve the credential info.")
+
+def csc_v2_credentials_create(access_token: str):
+    app.logger.info("Requesting credentials create.")
+
+    headers = _get_headers(access_token)
+    credential_creation_request = CredentialCreationRequest(
+        certificatePolicy="0.4.0.194112.1.2"
+    )
+    request = CredentialsCreateRequest(
+        credentialCreationRequest=credential_creation_request,
+        credentialInfo=True,
+        certificates="single",
+        certInfo=True
+    )
+
+    response = requests.post(url=credential_create_endpoint, data=request.to_json(), headers=headers)
+
+    if response.status_code == 400:
+        message = response.json()["message"]
+        app.logger.error("It was impossible to create the certificate: " + message)
+        raise ValueError("It was impossible to create the certificate: " + message)
+    elif response.status_code == 201:
+        app.logger.info("Created Certificate.")
+    else:
+        app.logger.error("Unexpected status code in credentials/create response: " + str(response.status_code))
+        raise ValueError("Received an unexpected status code when creating the certificate.")
+
+def csc_v2_credentials_delete(access_token: str, credential_id: str):
+    app.logger.info("Requesting credentials delete.")
+
+    headers = _get_headers(access_token)
+    request = CredentialsDeleteRequest(
+        credentialID=credential_id
+    )
+
+    response = requests.post(url=credential_delete_endpoint, data=request.to_json(), headers=headers)
+    if response.status_code == 400:
+        message = response.json()["message"]
+        app.logger.error("It was impossible to delete the certificate: " + message)
+        raise ValueError("It was impossible to delete the certificate: " + message)
+    elif response.status_code == 204:
+        app.logger.info("Deleted Certificate.")
+    else:
+        app.logger.error("Unexpected status code in credentials/delete response: " + str(response.status_code))
+        raise ValueError("Received an unexpected status code when deleting the certificate.")

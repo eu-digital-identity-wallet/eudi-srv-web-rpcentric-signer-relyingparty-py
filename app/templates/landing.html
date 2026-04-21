@@ -1,0 +1,47 @@
+{% extends 'base.html' %} {% block content %}
+<div class="title-container">
+  <h1>EUDIW RP-Centric rQES</h1>
+  <p>Welcome to the remote Qualified Electronic Signature component rp-centric backend server.</p>
+</div>
+
+<h2>Available Endpoints</h2>
+<p>In this domain, it is made available a Signature Creation Application and Qualified Trust Service Provider composed by an Authorization Server and Resource Server.</p>
+
+<div class="all-services-container">
+  <div class="single-service-box">
+    <span class="badge">GUI</span>
+    <p class="title">Relying Party</p>
+    <a href="{{ url_for('RP.home') }}">{{ service_url }}</a>
+  </div>
+  <div class="single-service-box">
+    <span class="badge">SCA</span>
+    <p class="title">Signature Creation Application</p>
+    <ul>
+      <li>/signatures/doc</li>
+    </ul>
+  </div>
+  <div class="single-service-box">
+    <span class="badge">QTSP</span>
+    <p class="title">Qualified Trust Service Provider</p>
+    <ul>
+      <li>
+        Authorization Server
+        <ul>
+          <li>/oauth2/authorize</li>
+          <li>/oauth2/token</li>
+          <li>/oid4vp/callback</li>
+        </ul>
+      </li>
+      <li>
+        Resource server
+        <ul>
+          <li>/csc/v2/info</li>
+          <li>/csc/v2/signatures/signHash</li>
+          <li>/csc/v2/credentials/list</li>
+          <li>/csc/v2/credentials/info</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

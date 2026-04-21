@@ -1,6 +1,6 @@
 # coding: latin-1
 ###############################################################################
-# Copyright (c) 2023 European Commission
+# Copyright (c) 2026 European Commission
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,18 +15,19 @@
 # limitations under the License.
 #
 ###############################################################################
-"""
-This config.py contains configuration data.
-"""
-import os
 
-class ConfService:
-    secret_key = os.getenv("SECRET_KEY")
-    service_url = os.getenv("SERVICE_URL")
-    as_url=os.getenv("AS_URL")
-    rs_url=os.getenv("RS_URL")
-    sca_url=os.getenv("SCA_URL")
-    oauth2_client_id = os.getenv("OAUTH2_CLIENT_ID")
-    oauth2_client_secret = os.getenv("OAUTH2_CLIENT_SECRET")
-    oauth2_redirect_uri = service_url+"/oauth2/callback"
-    LOAD_FOLDER = 'docs'
+class SessionState:
+    # OAuth2 Values
+    CODE_VERIFIER = "code_verifier"
+    CODE_CHALLENGE = "code_challenge"
+
+    # Authentication Values
+    CREDENTIAL_LIST_ACCESS_TOKEN = "service_access_token"
+
+    # Document Selection Values
+    FILENAME = "filename"
+
+    # Certificate Values
+    LIST_CERTIFICATE_ID = "credentials_ids_list"
+    CERTIFICATE_ID = "credentialID"
+    KEY_ALGOS = "key_algos"

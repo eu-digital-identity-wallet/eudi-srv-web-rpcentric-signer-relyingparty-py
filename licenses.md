@@ -53,3 +53,8 @@ _2025-01-13 12:11:20 CET_
 
 > - **POM Project URL**: [https://github.com/pallets/werkzeug/](https://github.com/pallets/werkzeug/)
 > - **POM License**: BSD 3-Clause License - [https://github.com/pallets/werkzeug/blob/main/LICENSE.txt](https://github.com/pallets/werkzeug/blob/main/LICENSE.txt)
+
+**11** **Name:** `python-dotenv` **Version:** `1.1.1`
+
+> - **POM Project URL**: [https://github.com/theskumar/python-dotenv](https://github.com/theskumar/python-dotenv)
+> - **POM License**: BSD 3-Clause License - [https://github.com/theskumar/python-dotenv/blob/main/LICENSE](https://github.com/theskumar/python-dotenv/blob/main/LICENSE)
