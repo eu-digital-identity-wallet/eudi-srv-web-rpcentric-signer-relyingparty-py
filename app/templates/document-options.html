@@ -1,0 +1,162 @@
+{% extends 'base.html' %} {% block content %}
+
+<!-- Display file name -->
+<div class="page-centered blue-box">
+  <h1>Sign Document</h1>
+  <h2>Select Signature Options</h2>
+
+  <div class="document-options-box">
+    <div class="preview">
+      <iframe src="/docs/{{ filename }}" width="100%" height="400"></iframe>
+    </div>
+
+    <form action="{{ redirect_url }}/signature" method="post">
+      <div class="document-options-form-div">
+        <p class="legend">File Name</p>
+        <label><input type="hidden" name="filename" value="{{ filename }}" />{{ filename }}</label>
+      </div>
+
+      <!--Container-->
+      <div class="document-options-form-div">
+        <p class="legend">Container</p>
+        <label>
+          <input type="radio" id="no-container" name="container"
+            value="No" onchange="updatePackagingOptions(this.value)" checked/>
+          No
+        </label>
+        <label>
+          <input type="radio" id="asics-container" name="container"
+            value="ASiC-S" onchange="updatePackagingOptions(this.value)" disabled/>
+          ASiC-S
+        </label>
+        <label>
+          <input type="radio" id="asice-container" name="container"
+            value="ASiC-E" onchange="updatePackagingOptions(this.value)" disabled/>
+          ASiC-E
+        </label>
+      </div>
+
+      <!--Signature Format-->
+      <div class="document-options-form-div">
+        <p class="legend">Signature Format</p>
+        <label><input type="radio" name="signature_format"
+            value="{{ signature_format_value }}" checked/>
+          {{ signature_format_name }}</label>
+      </div>
+
+      <!--Packaging-->
+      <div class="document-options-form-div">
+        <p class="legend">Packaging</p>
+        <label>
+          <input type="radio" id="enveloped-packaging" name="packaging" value="ENVELOPED" disabled/>
+          Enveloped
+        </label>
+        <label>
+          <input type="radio" id="enveloping-packaging" name="packaging" value="ENVELOPING" disabled/>
+          Enveloping
+        </label>
+        <label>
+          <input type="radio" id="detached-packaging" name="packaging" value="DETACHED" disabled/>
+          Detached
+        </label>
+        <label>
+          <input type="radio" id="internally-detached-packaging" name="packaging" value="INTERNALLY_DETACHED" disabled/>
+          Internally Detached
+        </label>
+      </div>
+
+      <!--Level-->
+      <div class="document-options-form-div">
+        <p class="legend">Level</p>
+        <label>
+          <input type="radio" name="level" value="Ades-B-B" checked/>
+          BASELINE-B
+        </label>
+        <label>
+          <input type="radio" name="level" value="Ades-B-T"/>
+          BASELINE-T
+        </label>
+        <label>
+          <input type="radio" name="level" value="Ades-B-LT"/>
+          BASELINE-LT
+        </label>
+        <label>
+          <input type="radio" name="level" value="Ades-B-LTA"/>
+          BASELINE-LTA
+        </label>
+      </div>
+
+      <!--Digest Algorithm-->
+      <div class="document-options-form-div">
+        <p class="legend">Digest Algorithm</p>
+        {% for algorithm in digest_algorithms %}
+        <label>
+          <input type="radio" name="digest_algorithm" value="{{ algorithm.oid }}"
+            {% if loop.first %} checked {% endif %}/>
+          {{ algorithm.name }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="btn primary-btn">Continue</button>
+    </form>
+  </div>
+</div>
+<script>
+  window.onload = onLoad();
+
+  function onLoad(){
+    loadContainer();
+    loadPackaging();
+  }
+
+  function loadContainer() {
+    if ("{{signature_format_name}}" === "XAdES" || "{{signature_format_name}}" === "CAdES") {
+      document.getElementById("asics-container").disabled = false;
+      document.getElementById("asice-container").disabled = false;
+    }
+  }
+
+  function loadPackaging() {
+    if ("{{signature_format_name}}" === "PAdES"){
+      document.getElementById("enveloped-packaging").disabled = false;
+      document.getElementById("enveloping-packaging").disabled = true;
+      document.getElementById("detached-packaging").disabled = true;
+      document.getElementById("internally-detached-packaging").disabled = true;
+    }
+    else if ("{{signature_format_name}}" === "XAdES"){
+      document.getElementById("enveloped-packaging").disabled = false;
+      document.getElementById("enveloping-packaging").disabled = false;
+      document.getElementById("detached-packaging").disabled = false;
+      document.getElementById("internally-detached-packaging").disabled = false;
+    }
+    else if ("{{signature_format_name}}" === "CAdES"){
+      document.getElementById("enveloped-packaging").disabled = true;
+      document.getElementById("enveloping-packaging").disabled = false;
+      document.getElementById("detached-packaging").disabled = false;
+      document.getElementById("internally-detached-packaging").disabled = false;
+    }
+    else if ("{{signature_format_name}}" === "JAdES"){
+      document.getElementById("enveloped-packaging").disabled = true;
+      document.getElementById("enveloping-packaging").disabled = false;
+      document.getElementById("detached-packaging").disabled = false;
+      document.getElementById("internally-detached-packaging").disabled = true;
+    }
+  }
+
+  function updatePackagingOptions(value) {
+    if (value === "ASiC-S" || value === "ASiC-E") {
+      if("{{signature_format_name}}" === "XAdES" || "{{signature_format_name}}" === "CAdES"){
+        document.getElementById("enveloped-packaging").disabled = true;
+        document.getElementById("enveloping-packaging").disabled = true;
+        document.getElementById("detached-packaging").disabled = false;
+        document.getElementById("internally-detached-packaging").disabled = true;
+      }
+    }
+    else {
+      loadPackaging();
+    }
+  }
+</script>
+
+{% endblock %}

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0]
+
+_21 Apr 2026_
+
+### Updated:
+
+- Update to comply with CSC API v2.2 specification (previously v2.0).
+
 ## [0.3.0]
 
 _28 May 2025_

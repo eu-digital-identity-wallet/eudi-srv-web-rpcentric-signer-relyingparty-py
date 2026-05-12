@@ -1,0 +1,78 @@
+{% extends 'base.html' %} {% block content %}
+
+<!-- Error message display -->
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<ul class="error-message">
+  {% for message in messages %}
+  <li>{{ message }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endwith %}
+
+<div class="page-centered blue-box">
+  <div class="login-box">
+    <h3>Login</h3>
+    <form action="{{ url_for('RP.login') }}" method="POST">
+      <div class="login-box-field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Username" required/>
+      </div>
+      <div class="login-box-field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Password" required/>
+      </div>
+      <!-- Submit button -->
+      <div class="button-container">
+        <a class="link" onclick="openPopup()">Users for testing</a>
+        <button class="btn common-btn primary-btn" type="submit">Login</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Pop-up to display test user information -->
+  <div class="popup" id="popup">
+    <div class="popup-close">
+      <button onclick="closePopup()">Close</button>
+    </div>
+    <h3>Sample Users</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Password</th>
+        </tr>
+      </thead>
+      <tbody id="user-table-body"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+  // Pass the users from Flask to JavaScript using JSON
+  const p_users = {{ rp_users | tojson }};
+
+  function openPopup() {
+      const popup = document.getElementById('popup');
+      const tableBody = document.getElementById('user-table-body');
+
+      tableBody.innerHTML = '';
+      p_users.forEach(user => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+              <td>${user.username}</td>
+              <td>${user.password}</td>
+          `;
+          tableBody.appendChild(row);
+      });
+      popup.style.display = 'block';
+  }
+
+  function closePopup() {
+      const popup = document.getElementById('popup');
+      popup.style.display = 'none';
+      overlay.style.display = 'none';
+  }
+</script>
+
+{% endblock %}

@@ -13,17 +13,17 @@
 # limitations under the License.
 
 import requests
-from app_config.config import ConfService as cfgserv
+from app.core.config import settings
 import json
 from flask import (
     current_app as app
 )
 
 def signature_flow(access_token, credential_id, filename, document, signature_format, conformance_level, signed_envelope_property, container, hash_algorithm_oid):
-    app.logger.info("Requesting signature to the SCA: "+cfgserv.sca_url)
-    url = cfgserv.sca_url+"/signatures/doc"
+    app.logger.info("Requesting signature to the SCA: " + settings.SCA_URL)
+    url = settings.SCA_URL + "/signatures/doc"
     
-    redirect_url = cfgserv.service_url+"/signed_document_download"
+    redirect_url = settings.SERVICE_URL + "/signed_document_download"
     
     authorization_header = "Bearer " + access_token
     headers = {
@@ -43,8 +43,8 @@ def signature_flow(access_token, credential_id, filename, document, signature_fo
             }
         ],
         "hashAlgorithmOID": hash_algorithm_oid,
-        "resourceServerUrl": cfgserv.rs_url,
-        "authorizationServerUrl": cfgserv.as_url,
+        "resourceServerUrl": settings.RS_URL,
+        "authorizationServerUrl": settings.AS_URL,
         "redirectUri": redirect_url
     })
 
@@ -52,6 +52,7 @@ def signature_flow(access_token, credential_id, filename, document, signature_fo
 
     response = requests.post(url, headers=headers, data=payload, allow_redirects=False)
     app.logger.info("Made Signature Request to SCA. Status Code: "+str(response.status_code))
+    app.logger.info(response.text)
    
     if response.status_code == 302: # redirects to the QTSP OID4VP Authentication Page
         app.logger.info("Successfully made request to sign the document. Redirecting to the OID4VP Authentication Page to authorize signature.")

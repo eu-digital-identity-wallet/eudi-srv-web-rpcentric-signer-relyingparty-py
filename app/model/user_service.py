@@ -1,21 +1,18 @@
-
-from model.user import User
+from app.model.user import User
 
 # Mock database
 users = [
-        {
-            'username': 'rp',
-            'password': 'pass123'
-        },
-        {
-            'username': 'user1',
-            'password': 'pass456'
-        }
-    ]
-
+    {
+        'username': 'rp',
+        'password': 'pass123'
+    },
+    {
+        'username': 'user1',
+        'password': 'pass456'
+    }
+]
 
 class UserService:
-
     # returns the user logged in if successful
     @staticmethod
     def login(username, password):        

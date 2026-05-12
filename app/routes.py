@@ -15,87 +15,61 @@
 # limitations under the License.
 ###############################################################################
 
-import os
-import base64
-import mimetypes
-from flask import (
-    Blueprint, render_template, request, session, send_from_directory, redirect, url_for, flash, current_app as app
-)
+import mimetypes, base64, os
+from flask import Blueprint, render_template, current_app as app, request, redirect, url_for, flash, session, send_from_directory
 from flask_login import login_user, logout_user, login_required
-from app_config.config import ConfService as cfgserv
-from model.user_service import UserService
-import qtsp_client, sca_client
+from app.core.config import settings
+from app.model.session_state import SessionState
+from app.model.user_service import UserService
+from app import qtsp_client, sca_client
 from cryptography.x509.oid import _SIG_OIDS_TO_HASH 
 from cryptography.hazmat._oid import ObjectIdentifier
-
 
 rp = Blueprint("RP", __name__, url_prefix="/")
 rp.template_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template/')
 
-DIGEST_OIDS = {
-    "md5": "1.2.840.113549.2.5",
-    "sha1": "1.3.14.3.2.26",
-    "sha224": "2.16.840.1.101.3.4.2.4",
-    "sha256": "2.16.840.1.101.3.4.2.1",
-    "sha384": "2.16.840.1.101.3.4.2.2",
-    "sha512": "2.16.840.1.101.3.4.2.3",
-    "sha3_224": "2.16.840.1.101.3.4.2.7",
-    "sha3_256": "2.16.840.1.101.3.4.2.8",
-    "sha3_384": "2.16.840.1.101.3.4.2.9",
-    "sha3_512": "2.16.840.1.101.3.4.2.10",
-}
-
 @rp.route('/', methods=['GET', 'POST'])
-def index():
-    return render_template('index.html', redirect_url = cfgserv.service_url) 
+def landing():
+    return render_template('landing.html', service_url = settings.SERVICE_URL)
 
 @rp.route('/tester', methods=['GET'])
-def main():
-    app.logger.info('Load main page.')
-    return render_template('main.html', redirect_url= cfgserv.service_url)
+def home():
+    return render_template('home.html')
 
 @rp.route('/tester/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        app.logger.info('Login request received.')
         username = request.form['username']
         password = request.form['password']
         user = UserService.login(username, password)
         if user is not None:
-            app.logger.info('Login successful.')
             login_user(user)
             return redirect(url_for('RP.account'))
         else:
-            app.logger.info('Login failed.')
             flash('Login failed! Please check your username and password.')
     users = UserService.get_users()
-    return render_template('login.html', redirect_url= cfgserv.service_url, rp_users = users)
+    return render_template('user-login.html', redirect_url= settings.SERVICE_URL, rp_users = users)
 
 @rp.route('/tester/logout')
 @login_required
 def logout():
-    app.logger.info('Logout request received.')
     logout_user()
-    app.logger.info('Logout successful.')
     return redirect(url_for('RP.login'))
 
 @rp.route('/tester/account', methods=['GET', 'POST'])
 @login_required
 def account():
-    app.logger.info('Load account page.')
-    return render_template('account.html', redirect_url= cfgserv.service_url)
+    return render_template('user-account.html', redirect_url= settings.SERVICE_URL)
 
-@rp.route('/tester/select_document', methods=['GET'])
+@rp.route('/tester/document/select', methods=['GET'])
 @login_required
 def select_document():
-    app.logger.info("Load select_document page.")
-    return render_template('select_document.html', redirect_url= cfgserv.service_url)
+    return render_template('document-select.html')
 
-# Obtain Access Token with scope="service"
-# If not authenticated redirects to authentication page
-@rp.route('/tester/service_authorization', methods=['GET'])
+
+@rp.route('/tester/certificate/options', methods=['GET'])
 @login_required
-def service_authorization():
+def options_certificate():
     app.logger.info("Request for service authorization with parameters: "+str(len(request.args)))
     app.logger.info("Document in args: "+request.args.get('document'))
     document_type = request.args.get('document')
@@ -109,24 +83,40 @@ def service_authorization():
         filename = 'sample.xml'
     else:
         return "Invalid document type selected."
-    
-    update_session_values(variable_name="filename", variable_value=filename)
-    app.logger.info("Filename Choosen: "+filename)
-        
-    # makes the oauth2/authorize request:
+
+    update_session_values(variable_name=SessionState.FILENAME, variable_value=filename)
+    app.logger.info("Filename chosen: " + filename)
+    return render_template('certificate-retrieve-options.html', redirect_url= settings.SERVICE_URL)
+
+@rp.route('/tester/service_authorization', methods=['GET'])
+@login_required
+def service_authorization():
     try:
         app.logger.info("Requesting service authorization.")
         code_verifier, location = qtsp_client.oauth2_authorize_service_request()
-        update_session_values(variable_name="code_verifier", variable_value=code_verifier)
+        update_session_values(variable_name=SessionState.CODE_VERIFIER, variable_value=code_verifier)
         app.logger.info("Received Service Authentication in URL: "+location)
+        session.modified = True
         return redirect(location)
     except ValueError as e:
         app.logger.error("Error in service authorization: "+str(e))
         return str(e), 400
 
-# endpoint where the qtsp will be redirected to after authentication
-# used
-@rp.route("/tester/oauth2/callback", methods=["GET", "POST"])
+@rp.route('/tester/create_credential_authorization', methods=['GET'])
+@login_required
+def create_credential_authorization():
+    try:
+        app.logger.info("Requesting service authorization.")
+        code_verifier, location = qtsp_client.oauth2_authorize_credential_create_request()
+        update_session_values(variable_name=SessionState.CODE_VERIFIER, variable_value=code_verifier)
+        app.logger.info("Received Service Authentication in URL: "+location)
+        session.modified = True
+        return redirect(location)
+    except ValueError as e:
+        app.logger.error("Error in service authorization: "+str(e))
+        return str(e), 400
+
+@rp.route("/tester/oauth2/callback", methods=["GET"])
 def oauth_login_code():
     code = request.args.get("code")
     state = request.args.get("state")
@@ -138,8 +128,9 @@ def oauth_login_code():
     if error:
         app.logger.error("Received Error %s: %s", error, error_description)
         return error_description, 400
+
     
-    code_verifier = session.get("code_verifier")
+    code_verifier = session.get(SessionState.CODE_VERIFIER)
     if code_verifier is None:
         app.logger.error("Session key 'code_verifier' is missing.")
         return "Session expired or invalid request.", 400
@@ -150,62 +141,70 @@ def oauth_login_code():
         
     try:
         app.logger.info("Requesting token with code: %s and code_verifier: %s", code, code_verifier)
-        scope, access_token = qtsp_client.oauth2_token_request(code, code_verifier) # trades the code for the access token
+        response = qtsp_client.oauth2_token_request(code, code_verifier) # trades the code for the access token
     except ValueError as e:
         app.logger.error("Error during OAuth token request: %s", str(e), exc_info=True)
         return "OAuth token request failed.", 500
-    
-    if scope == "service":
-        remove_session_values(variable_name="code_verifier")
-        update_session_values(variable_name="service_access_token", variable_value=access_token)
+
+    if response.scope == "service":
+        remove_session_values(variable_name=SessionState.CODE_VERIFIER)
+        update_session_values(variable_name=SessionState.CREDENTIAL_LIST_ACCESS_TOKEN, variable_value=response.access_token)
         return redirect(url_for("RP.credentials_list"))
-    elif scope == "credential":
-        remove_session_values(variable_name="code_verifier")
-        update_session_values(variable_name="credential_access_token", variable_value=access_token)
-        return redirect(url_for("RP.sign_document"))
-    
-    app.logger.error("Unexpected scope received: %s", scope)
+    elif response.scope == "credential_creation":
+        remove_session_values(variable_name=SessionState.CODE_VERIFIER)
+        qtsp_client.csc_v2_credentials_create(response.access_token)
+        update_session_values(variable_name=SessionState.CREDENTIAL_LIST_ACCESS_TOKEN, variable_value=response.access_token)
+        return redirect(url_for("RP.credentials_list"))
+    elif response.scope == "credential_deletion":
+        remove_session_values(variable_name=SessionState.CODE_VERIFIER)
+        credential_id = session.get(SessionState.CERTIFICATE_ID)
+        qtsp_client.csc_v2_credentials_delete(response.access_token, credential_id)
+        return redirect(url_for("RP.account"))
+
+
+    app.logger.error("Unexpected scope received: %s", response.scope)
     return "Invalid scope received.", 400
      
         
 @rp.route("/tester/credentials_list", methods=["GET", "POST"])
 @login_required
 def credentials_list():
-    service_access_token = session.get("service_access_token")
+    service_access_token = session.get(SessionState.CREDENTIAL_LIST_ACCESS_TOKEN)
     credentials_ids_list = qtsp_client.csc_v2_credentials_list(service_access_token)
-    return render_template('credential.html', redirect_url=cfgserv.service_url, credentials=credentials_ids_list)
+    update_session_values(SessionState.LIST_CERTIFICATE_ID, credentials_ids_list.credential_ids)
+    return render_template('certificate-list.html', redirect_url=settings.SERVICE_URL, credentials=credentials_ids_list.credential_ids)
 
 @rp.route("/tester/set_credential_id", methods=["GET", "POST"])
 def setCredentialId():
     credentialId = request.get_json().get("credentialID")
     app.logger.info("Selected credential: "+credentialId)
-    update_session_values(variable_name="credentialID", variable_value=credentialId)
-
-    app.logger.info("Requesting information about the selected credential.")
-    service_access_token = session.get("service_access_token")
-    _, key_algos = qtsp_client.csc_v2_credentials_info(service_access_token, credentialId)
-    update_session_values(variable_name="key_algos", variable_value=key_algos)
-    
+    update_session_values(variable_name=SessionState.CERTIFICATE_ID, variable_value=credentialId)
     return "success"
 
 # Present page with signing options
 @rp.route('/tester/check_options')
 @login_required
 def check():
-    filename = session.get("filename")
+    credentialId = session.get(SessionState.CERTIFICATE_ID)
+    app.logger.info("Requesting information about the selected credential.")
+    service_access_token = session.get(SessionState.CREDENTIAL_LIST_ACCESS_TOKEN)
+    _, key_algos = qtsp_client.csc_v2_credentials_info(service_access_token, credentialId)
+    update_session_values(variable_name=SessionState.KEY_ALGOS, variable_value=key_algos)
+
+    filename = session.get(SessionState.FILENAME)
     signature_format_name, signature_format_value = get_signature_format(filename)
     
-    key_algos = session.get("key_algos")
+    key_algos = session.get(SessionState.KEY_ALGOS)
     hash_algos = []
     for algo in key_algos:
         hash_algo = _SIG_OIDS_TO_HASH.get(ObjectIdentifier(algo))
         if hash_algo is not None:
-            hash_algos.append({"name":hash_algo.name.upper(), "oid":DIGEST_OIDS.get(hash_algo.name.lower())})
+            hash_algos.append({"name":hash_algo.name.upper(), "oid":settings.DIGEST_OIDS.get(hash_algo.name.lower())})
     
-    remove_session_values(variable_name="key_algos")
+    remove_session_values(variable_name=SessionState.KEY_ALGOS)
     
     return render_template(
-        'select_options.html', redirect_url=cfgserv.service_url, 
+        'document-options.html', redirect_url=settings.SERVICE_URL,
         filename=filename, signature_format_name=signature_format_name,
         signature_format_value=signature_format_value, digest_algorithms=hash_algos)
 
@@ -222,7 +221,7 @@ def get_signature_format(filename):
 # Retrieve document with given name
 @rp.route('/docs/<path:filename>')
 def serve_docs(filename):
-    return send_from_directory('docs', filename)
+    return send_from_directory(settings.SAMPLE_DOCUMENTS_FOLDER, filename)
 
 @rp.route("/tester/signature", methods=['GET', 'POST'])
 def sca_signature_flow():
@@ -233,7 +232,7 @@ def sca_signature_flow():
     if not filename:
         return "Filename is required", 400  # Return an error if filename is None
     app.logger.info("Signing File: "+filename)
-    update_session_values(variable_name="filename", variable_value=filename)
+    update_session_values(variable_name=SessionState.FILENAME, variable_value=filename)
 
     base64_document=get_base64_document(filename)
     container=form_local["container"]
@@ -244,19 +243,18 @@ def sca_signature_flow():
     conformance_level=form_local["level"]
     hash_algorithm_oid=form_local["digest_algorithm"]        
     
-    credentialId = session.get("credentialID")
+    credentialId = session.get(SessionState.CERTIFICATE_ID)
 
     try:
-        location = sca_client.signature_flow(session.get("service_access_token"), credentialId, filename, 
+        location = sca_client.signature_flow(session.get(SessionState.CREDENTIAL_LIST_ACCESS_TOKEN), credentialId, filename,
             base64_document, signature_format, conformance_level, signed_envelope_property, 
             container, hash_algorithm_oid)
         app.logger.info("Redirecting to QTSP OID4VP Authentication Page.")
-        remove_session_values(variable_name="credentialID")
+        remove_session_values(variable_name=SessionState.CERTIFICATE_ID)
         return redirect(location)
     except ValueError as e:
         app.logger.error("Error in signature flow: "+str(e))
         return str(e), 400
-
 
 @rp.route("/tester/signed_document_download", methods=['GET', 'POST'])
 def signed_document_download():
@@ -264,7 +262,7 @@ def signed_document_download():
     signed_document = request.form["signed_document"]
     app.logger.info("Signed Document present? "+str(signed_document is not None))
             
-    filename = session.get("filename")
+    filename = session.get(SessionState.FILENAME)
     if not filename:
         return "Filename is required", 400 # Return an error if filename is None
     app.logger.info("Identified signed document of file: "+filename)
@@ -283,12 +281,12 @@ def signed_document_download():
 
     new_name = add_suffix_to_filename(os.path.basename(filename), new_ext=ext)
     
-    remove_session_values(variable_name="filename")
+    remove_session_values(variable_name=SessionState.FILENAME)
     remove_session_values(variable_name="container")
     
     return render_template(
-        'sign_document.html',
-        redirect_url=cfgserv.service_url, 
+        'document-signed.html',
+        redirect_url=settings.SERVICE_URL,
         document_signed_value=signed_document,
         document_content_type=mime_type,
         document_filename=new_name
@@ -305,11 +303,11 @@ def remove_session_values(variable_name):
 
 def get_base64_document(filename):
     # Construct the path to the file in the "docs" folder
-    file_path = os.path.join(cfgserv.LOAD_FOLDER, filename)
+    file_path = os.path.join(app.root_path, settings.SAMPLE_DOCUMENTS_FOLDER, filename)
 
     # Check if the file exists before trying to read it
     if not os.path.isfile(file_path):
-        return f"File '{filename}' not found in the docs directory", 404
+        return f"File '{filename}' not found in the {settings.SAMPLE_DOCUMENTS_FOLDER} directory", 404
     
     # Read the content of the file to encode it in base64
     base64_document = None
@@ -325,3 +323,25 @@ def add_suffix_to_filename(filename, suffix="_signed", new_ext = None):
         return f"{name}{suffix}{new_ext}"
 
     return f"{name}{suffix}{ext}"
+
+@rp.route('/tester/delete_credential', methods=['GET'])
+@login_required
+def delete_credential_page():
+    credentials_ids = session.get(SessionState.LIST_CERTIFICATE_ID)
+    return render_template('certificate-delete.html', redirect_url=settings.SERVICE_URL,
+                           credentials=credentials_ids)
+
+
+@rp.route('/tester/delete_credential_authorization', methods=['GET'])
+@login_required
+def delete_credential_authorization():
+    credential_id = session.get(SessionState.CERTIFICATE_ID)
+    try:
+        app.logger.info("Requesting service authorization.")
+        code_verifier, location = qtsp_client.oauth2_authorize_credential_delete_request(credential_id)
+        update_session_values(variable_name=SessionState.CODE_VERIFIER, variable_value=code_verifier)
+        app.logger.info("Received Service Authentication in URL: "+location)
+        return redirect(location)
+    except ValueError as e:
+        app.logger.error("Error in service authorization: "+str(e))
+        return str(e), 400

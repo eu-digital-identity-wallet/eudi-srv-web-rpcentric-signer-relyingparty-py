@@ -1,0 +1,17 @@
+{% extends 'base.html' %} {% block content %}
+<div class="page-centered blue-box">
+  <h1>Certificate Retrieval</h1>
+  <p>Select how you'd like to retrieve your signing certificate from the Qualified Trust Service Provider.</p>
+
+  <div class="certificate-options-div">
+    <a class="certificate-options" href="{{ url_for('RP.create_credential_authorization') }}">
+      <span style="font-weight: 600;">Create Certificate</span>
+      <span>Generate a new signing certificate</span>
+    </a>
+    <a class="certificate-options" href="{{ url_for('RP.service_authorization') }}">
+      <span style="font-weight: 600;">Get Certificates</span>
+      <span>Retrieve existing signing certificates</span>
+    </a>
+  </div>
+</div>
+{% endblock %}
